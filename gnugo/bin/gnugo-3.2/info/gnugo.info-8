@@ -1,0 +1,1215 @@
+This is gnugo.info, produced by makeinfo version 4.0b from gnugo.texi.
+
+INFO-DIR-SECTION GNU games
+START-INFO-DIR-ENTRY
+* GNU go: (gnugo).          The GNU Go program
+END-INFO-DIR-ENTRY
+
+
+File: gnugo.info,  Node: Hash Structures,  Next: Hash Functions,  Prev: Hash Organization,  Up: Hashing
+
+Hash Structures
+---------------
+
+   The basic hash structures are declared in `engine/hash.h' and
+`engine/cache.c'
+
+     typedef struct hashposition_t {
+       Compacttype  board[COMPACT_BOARD_SIZE];
+       int          ko_pos;
+     } Hashposition;
+
+   Represents the board and optionally the location of a ko, which is
+an illegal move. The player whose move is next is not recorded.
+
+     typedef struct {
+       Hashvalue     hashval;
+       Hashposition  hashpos;
+     } Hash_data;
+
+   Represents the return value of a function (`hashval') and the board
+state (`hashpos').
+
+     typedef struct read_result_t {
+       unsigned int data1;
+       unsigned int data2;
+     
+       struct read_result_t *next;
+     } Read_result;
+
+   The data1 field packs into 32 bits the following fields:
+
+
+     komaster:  2 bits (EMPTY, BLACK, WHITE, or GRAY)
+     kom_pos : 10 bits (allows MAX_BOARD up to 31)
+     routine :  4 bits (currently 10 different choices)
+     str1    : 10 bits
+     stackp  :  5 bits
+
+   The data2 field packs into 32 bits the following fields:
+
+
+     status :   2 bits (0 free, 1 open, 2 closed)
+     result1:   4 bits
+     result2:   4 bits
+     move   :  10 bits
+     str2   :  10 bits
+
+   The `komaster' and `(kom_pos)' field are documented in *Note Ko::.
+
+   When a new result node is created, 'status' is set to 1 'open'.
+This is then set to 2 'closed' when the result is entered. The main use
+for this is to identify open result nodes when the hashtable is
+partially cleared. Another potential use for this field is to identify
+repeated positions in the reading, in particular local double or triple
+kos.
+
+     typedef struct hashnode_t {
+       Hash_data            key;
+       Read_result        * results;
+       struct hashnode_t  * next;
+     } Hashnode;
+
+   The hash table consists of hash nodes.  Each hash node consists of
+The hash value for the position it holds, the position itself and the
+actual information which is purpose of the table from the start.
+
+   There is also a pointer to another hash node which is used when the
+nodes are sorted into hash buckets (see below).
+
+     typedef struct hashtable {
+       size_t         hashtablesize;	/* Number of hash buckets */
+       Hashnode    ** hashtable;	/* Pointer to array of hashnode lists */
+     
+       int            num_nodes;	/* Total number of hash nodes */
+       Hashnode     * all_nodes;	/* Pointer to all allocated hash nodes. */
+       int            free_node;	/* Index to next free node. */
+     
+       int            num_results;	/* Total number of results */
+       Read_result  * all_results;	/* Pointer to all allocated results. */
+       int            free_result;	/* Index to next free result. */
+     } Hashtable;
+
+   The hash table consists of three parts:
+
+   * The hash table proper: a number of hash buckets with collisions
+     being handled by a linked list.
+
+   * The hash nodes.  These are allocated at creation time and are
+     never removed or reallocated in the current implementation.
+
+   * The results of the searches.  Since many different searches can be
+     done in the same position, there should be more of these than hash
+     nodes.
+
+
+File: gnugo.info,  Node: Hash Functions,  Next: Persistent Cache,  Prev: Hash Structures,  Up: Hashing
+
+Hash Functions
+--------------
+
+   The following functions are defined in `hash.c':
+
+   * `void hash_init()'
+          Initialize the entire hash system.
+
+   * `int hashdata_compare(Hash_data *key1, Hash_data *key2)'
+          Returns 0 if `*key1 == *key2', 2 if the hashvalues differ, or
+          1 if only the hashpositions differ.  This adheres (almost) to
+          the standard compare function semantics which are used e.g.
+          by the comparison functions used in qsort().
+
+   * `void hashposition_dump(Hashposition *pos, FILE *outfile)'
+          Dump an ASCII representation of the contents of a
+          Hashposition onto the FILE outfile.
+
+   * `int hashdata_diff_dump(Hash_data *key1,Hash_data *key2 )'
+          Compare two Hashdata structs. If equal: return zero. If not:
+          dump a human readable summary of any differences to stderr.
+          The return value is the same as for hashdata_compare. This
+          function is primarily intended to be used in assert
+          statements.
+
+   * `void hashdata_recalc(Hash_data *target, Intersection *p, int
+     kopos)'
+          Calculate the compactboard and the hashvalue in one function.
+          They are always used together and it saves us a loop and a
+          function call.
+
+   * `void hashdata_set_ko(Hash_data *hd, int pos)'
+          Set or remove a ko at `pos'.
+
+   * `void hashdata_remove_ko(Hash_data *hd)'
+          Remove any ko from the hash value and hash position.
+
+   * `void hashdata_invert_stone(Hash_data *hd, int pos, int color)'
+          Set or remove a stone of `color' at `pos' in a Hash_data.
+
+   * `void read_result_dump(Read_result *result, FILE *outfile)'
+          Dump an ASCII representation of the contents of a Read_result
+          onto the FILE outfile.
+
+   * `void hashnode_dump(Hashnode *node, FILE *outfile)'
+          Dump an ASCII representation of the contents of a Hashnode
+          onto the FILE outfile.
+
+   * `int hashtable_init(Hashtable *table, int tablesize, int
+     num_nodes, int num_results)'
+          Initialize a hash table for a given total size and size of the
+          hash table. Returns 0 if something went wrong. Just now this
+          means that there wasn't enough memory available.
+
+   * `Hashtable * hashtable_new(int tablesize, int num_nodes, int
+     num_results)'
+          Allocate a new hash table and return a pointer to it. Return
+          NULL if there is insufficient memory.
+
+   * `void hashtable_clear(Hashtable *table)'
+          Clear an existing hash table.
+
+   * `void hashtable_clear_if_full(Hashtable *table)'
+          Clear an existing hash table only if it happens to be full.
+          By full we mean that we are either out of positions or read
+          results.
+
+   * `Hashnode * hashtable_enter_position(Hashtable *table, Hash_data
+     *hd)'
+          Enter a position with a given hash value into the table.
+          Return a pointer to the hash node where it was stored.  If it
+          is already there, don't enter it again, but return a pointer
+          to the old one.
+
+   * `Hashnode * hashtable_search(Hashtable *table, Hash_data *hd)'
+          Given a Hashposition and a Hash value, find the hashnode
+          which contains this position with the given hash value.
+
+   * `void hashtable_dump(Hashtable *table, FILE *outfile)'
+          Dump an ASCII representation of the contents of a Hashtable
+          onto the FILE outfile.
+
+   The following macros are defined in `hash.h'
+
+   * `rr_get_komaster(rr)'
+
+   * `rr_get_kom_pos(rr)'
+
+   * `rr_get_routine(rr)'
+
+   * `rr_get_str1(rr)'
+
+   * `rr_get_stackp(rr)'
+
+   * `rr_get_str2(rr)'
+
+   * `rr_get_str(rr)'
+
+   * `rr_get_status(rr)'
+
+   * `rr_get_result1(rr)'
+
+   * `rr_get_result2(rr)'
+
+   * `rr_get_move(rr)'
+
+   * `rr_get_result(rr)'
+          Get the constituent parts of a `Read_result'.
+
+   The following macros and functions are defined in `engine/reading.c':
+
+   * `static int get_read_result(int routine, int *si, int *sj,
+     Read_result **read_result)'
+          Return a Read_result for the current position, routine and
+          location.  For performance, the location is changed to the
+          origin of the string.
+
+   * `READ_RETURN0(Read_result *read_result)'
+          Cache a negative read result.
+
+   * `READ_RETURN(Read_result *read_result, int *pointi, int *pointj,
+     int resulti, int resultj, int value)'
+          If `pointi' and `pointj' are not null pointers, then give
+          `(*pointi, *pointj)' the values `(resulti, resultj)'. Then
+          cache the `read_result'. Clear the hashtable if full and
+          return `value'.
+
+
+File: gnugo.info,  Node: Persistent Cache,  Next: Ko,  Prev: Hash Functions,  Up: Tactical Reading
+
+Persistent Reading Cache
+------------------------
+
+   Some reading calculations can be safely saved from move to move.
+
+   The function `store_persistent_cache()' is called only by `attack'
+and `find_defense', never from their static recursive counterparts
+`do_attack' and `do_defend'.  The function
+`store_persistent_reading_cache()' attempts to cache the most expensive
+reading results. The function `search_persistent_reading_cache'
+attempts to retrieve a result from the cache.
+
+   If all cache entries are occupied, we try to replace the least useful
+one. This is indicated by the score field, which is initially the
+number of nodes expended by this particular reading, and later
+multiplied by the number of times it has been retrieved from the cache.
+
+   Once a (permanent) move is made, a number of cache entries
+immediately become invalid.  These are cleaned away by the function
+`purge_persistent_reading_cache().' To have a criterion for when a
+result may be purged, the function `store_persistent_cache()' computes
+the "reading shadow" and "active area". If a permanent move is
+subsequently played in the active area, the cached result is
+invalidated. We now explain this algorithm in detail.
+
+   The "reading shadow" is the concatenation of all moves in all
+variations, as well as locations where an illegal move has been tried.
+
+   Once the read is finished, the reading shadow is expanded to the
+"active area" which may be cached. The intention is that as long as no
+stones are played in the active area, the cached value may safely be
+used.
+
+   Here is the algorithm used to compute the active area.  This
+algorithm is in the function `store_persistent_reading_cache()'.  The
+most expensive readings so far are stored in the persistent cache.
+
+   * The reading shadow and the string under attack are marked with the
+     character `1'. We also include the successful move, which is most
+     often a part of the reading shadow, but sometimes not, for example
+     with the function `attack1()'.
+
+   * Next the reading shadow is expanded by marking strings and empty
+     vertices adjacent to the area marked `1' with the character `2'.
+
+   * Next vertices adjacent to empty vertices marked `2' are labelled
+     with the character `3'.
+
+   * Next all vertices adjacent to previously marked vertices. These are
+     marked `-1' instead of the more logical `4' because it is slightly
+     faster to code this way.
+
+   * If the stack pointer is >0 we add the moves already played from the
+     moves stack with mark 4.
+
+
+File: gnugo.info,  Node: Ko,  Next: A Ko Example,  Prev: Persistent Cache,  Up: Tactical Reading
+
+Ko Handling
+===========
+
+   The principles of ko handling are the same for tactical reading and
+owl reading.
+
+   We have already mentioned (*note Reading Basics::) that GNU Go uses
+a return code of `KO_A' or `KO_B' if the result depends on ko. The
+return code of `KO_B' means that the position can be won provided the
+player whose move calls the function can come up with a sufficiently
+large ko threat. In order to verify this, the function must simulate
+making a ko threat and having it answered by taking the ko even if it
+is illegal. We call such an experimental taking of the ko a
+"conditional" ko capture.
+
+   Conditional ko captures are accomplished by the function `tryko()'.
+This function is like `trymove()' except that it does not require
+legality of the move in question.
+
+   The static reading functions, and the global functions `do_attack'
+and `do_find_defense' have arguments `komaster', `kom_pos'. These
+mediate ko captures to prevent the occurrence of infinite loops.
+
+   Normally `komaster' is `EMPTY' but it can also be `BLACK', `WHITE'
+or `GRAY'. The komaster is set to `color' when `color' makes a
+conditional ko capture. In this case `kom_pos' is set to the location
+of the captured ko stone.
+
+   If the opponent is komaster, the reading functions will not try to
+take the ko at `kom_pos'. Also, the komaster is normally not allowed to
+take another ko. The exception is a nested ko, characterized by the
+condition that the captured ko stone is at distance 1 both vertically
+and horizontally from `kom_pos', which is the location of the last
+stone taken by the komaster. Thus in this situation:
+
+
+              .OX
+              OX*X
+             OmOX
+              OO
+
+   Here if `m' is the location of `kom_pos', then the move at `*' is
+allowed.
+
+   The rationale behind this rule is that in the case where there are
+two kos on the board, the komaster cannot win both, and by becoming
+komaster he has already chosen which ko he wants to win. But in the
+case of a nested ko, taking one ko is a precondition to taking the
+other one, so we allow this.
+
+   If the komaster's opponent takes a ko, then both players have taken
+one ko. In this case `komaster' is set to `GRAY' and after this further
+ko captures are not allowed.
+
+   If the ko at `kom_pos' is filled, then the komaster reverts to
+`EMPTY'.
+
+   The komaster scheme used in GNU Go 3.0 is known as komaster scheme 1.
+It may be summarized as follows. It is assumed that `O' is about to
+move.
+
+   * 1. Komaster is `EMPTY'.
+        - 1a) Unconditional ko capture is allowed. Komaster remains
+          `EMPTY'.
+
+        - 1b) Conditional ko capture is allowed. Komaster is set to `O'
+          and `kom_pos' to the location of the ko, where a stone was
+          just removed.
+
+   * 2. Komaster is `O':
+        - 2a) Only nested ko captures are allowed.
+
+        - 2b) If komaster fill the ko at `kom_pos' then komaster
+          reverts to `EMPTY'.
+
+   * 3. Komaster is `X':
+        - Play at `kom_pos' is not allowed. Any other ko capture is
+          allowed. If `O' takes another ko, komaster becomes `GRAY'.
+
+   * 4. Komaster is `GRAY':
+        - Ko captures are not allowed. If the ko at `kom_pos' is filled
+          then the komaster reverts to `EMPTY'.
+
+   In GNU Go 3.2 a new komaster scheme 5 is used. It may be described
+as follows.
+
+   * 1. Komaster is EMPTY.
+        - 1a. Unconditional ko capture is allowed.
+               Komaster remains EMPTY if previous move was not a ko
+               capture.  Komaster is set to WEAK_KO if previous move
+               was a ko capture and kom_pos is set to the old value of
+               board_ko_pos.
+
+        - 1b) Conditional ko capture is allowed.
+               Komaster is set to O and kom_pos to the location of the
+               ko, where a stone was just removed.
+
+   * 2. Komaster is O:
+        - 2a) Only nested ko captures are allowed. Kom_pos is moved to
+          the new removed stone.
+
+        - 2b) If komaster fills the ko at kom_pos then komaster reverts
+          to EMPTY.
+
+   * 3. Komaster is X:
+          Play at kom_pos is not allowed. Any other ko capture is
+          allowed. If O takes another ko, komaster becomes GRAY_X.
+
+   * 4. Komaster is GRAY_O or GRAY_X:
+          Ko captures are not allowed. If the ko at kom_pos is filled
+          then the komaster reverts to EMPTY.
+
+   * 5. Komaster is WEAK_KO:
+        - 5a) After a non-ko move komaster reverts to EMPTY.
+
+        - 5b) Unconditional ko capture is only allowed if it is nested
+          ko capture.
+               Komaster is changed to WEAK_X and kom_pos to the old
+               value of board_ko_pos.
+
+        - 5c) Conditional ko capture is allowed according to the rules
+          of 1b.
+
+
+File: gnugo.info,  Node: A Ko Example,  Next: Another Ko Example,  Prev: Ko,  Up: Tactical Reading
+
+A Ko Example
+============
+
+   To see the komaster scheme in action, consider this position from
+the file `regressions/games/life_and_death/tripod9.sgf'.  We recommend
+studying this example by examining the variation file produced by the
+command:
+
+       gnugo -l tripod9.sgf --decidedragon C3 -o vars.sgf
+
+   In the lower left hand corner, there are kos at A2 and B4.  Black is
+unconditionally dead because if W wins either ko there is nothing B can
+do.
+
+
+      8 . . . . . . . .
+      7 . . O . . . . .
+      6 . . O . . . . .
+      5 O O O . . . . .
+      4 O . O O . . . .
+      3 X O X O O O O .
+      2 . X X X O . . .
+      1 X O . . . . . .
+        A B C D E F G H
+
+   This is how the komaster scheme sees this. B (i.e. X) starts by
+taking the ko at B4. W replies by taking the ko at A1. The board looks
+like this:
+
+
+      8 . . . . . . . .
+      7 . . O . . . . .
+      6 . . O . . . . .
+      5 O O O . . . . .
+      4 O X O O . . . .
+      3 X . X O O O O .
+      2 O X X X O . . .
+      1 . O . . . . . .
+        A B C D E F G H
+
+   Now any move except the ko recapture (currently illegal) at A1 loses
+for B, so B retakes the ko and becomes komaster.  The board looks like
+this:
+
+
+      8 . . . . . . . .         komaster: BLACK
+      7 . . O . . . . .         kom_pos: A2
+      6 . . O . . . . .
+      5 O O O . . . . .
+      4 O X O O . . . .
+      3 X . X O O O O .
+      2 . X X X O . . .
+      1 X O . . . . . .
+        A B C D E F G H
+
+   W takes the ko at B3 after which the komaster is `GRAY' and ko
+recaptures are not allowed.
+
+
+      8 . . . . . . . .         komaster: GRAY
+      7 . . O . . . . .         kom_pos: B4
+      6 . . O . . . . .
+      5 O O O . . . . .
+      4 O . O O . . . .
+      3 X O X O O O O .
+      2 . X X X O . . .
+      1 X O . . . . . .
+        A B C D E F G H
+
+   Since B is not allowed any ko recaptures, there is nothing he can do
+and he is found dead. Thus the komaster scheme produces the correct
+result.
+
+
+File: gnugo.info,  Node: Another Ko Example,  Next: Alternate Komaster Schemes,  Prev: A Ko Example,  Up: Tactical Reading
+
+Another Ko Example
+==================
+
+   We now consider an example to show why the komaster is reset to
+`EMPTY' if the ko is resolved in the komaster's favor. This means that
+the ko is filled, or else that is becomes no longer a ko and it is
+illegal for the komaster's opponent to play there.
+
+   The position resulting under consideration is in the file
+`regressions/games/ko5.sgf'.  This is the position:
+
+      . . . . . . O O 8
+      X X X . . . O . 7
+      X . X X . . O . 6
+      . X . X X X O O 5
+      X X . X . X O X 4
+      . O X O O O X . 3
+      O O X O . O X X 2
+      . O . X O X X . 1
+      F G H J K L M N
+
+   We recommend studying this example by examining the variation file
+produced by the command:
+
+     gnugo -l ko5.sgf --quiet --decidestring L1 -o vars.sgf
+
+   The correct resolution is that H1 attacks L1 unconditionally while K2
+defends it with ko (code `KO_A').
+
+   After Black (X) takes the ko at K3, white can do nothing but retake
+the ko conditionally, becoming komaster. B cannot do much, but in one
+variation he plays at K4 and W takes at H1. The following position
+results:
+
+      . . . . . . O O 8
+      X X X . . . O . 7
+      X . X X . . O . 6
+      . X . X X X O O 5
+      X X . X X X O X 4
+      . O X O O O X . 3
+      O O X O . O X X 2
+      . O O . O X X . 1
+      F G H J K L M N
+
+   Now it is important the `O' is no longer komaster. Were `O' still
+komaster, he could capture the ko at N3 and there would be no way to
+finish off B.
+
+
+File: gnugo.info,  Node: Alternate Komaster Schemes,  Next: Superstrings,  Prev: Another Ko Example,  Up: Tactical Reading
+
+Alternate Komaster Schemes
+==========================
+
+   The following alternate schemes have been proposed. It is assumed
+that `O' is the player about to move.
+
+Essentially the 2.7.232 scheme.
+-------------------------------
+
+   * Komaster is EMPTY.
+        - Unconditional ko capture is allowed. Komaster remains EMPTY.
+
+        - Conditional ko capture is allowed. Komaster is set to O and
+          `kom_pos' to the location of the ko, where a stone was just
+          removed.
+
+   * Komaster is O:
+        - Conditional ko capture is not allowed.
+
+        - Unconditional ko capture is allowed. Komaster parameters
+          unchanged.
+
+   * Komaster is X:
+        - Conditional ko capture is not allowed.
+
+        - Unconditional ko capture is allowed except for a move at
+          `kom_pos'. Komaster parameters unchanged.
+
+Revised 2.7.232 version
+-----------------------
+
+   * Komaster is EMPTY.
+        - Unconditional ko capture is allowed. Komaster remains EMPTY.
+
+        - Conditional ko capture is allowed. Komaster is set to `O' and
+          `kom_pos' to the location of the ko, where a stone was just
+          removed.
+
+   * Komaster is `O':
+        - Ko capture (both kinds) is allowed only if after playing the
+          move, `is_ko(kom_pos, X)' returns false. In that case,
+          `kom_pos' is updated to the new ko position, i.e. the stone
+          captured by this move.
+
+   * Komaster is `X':
+        - Conditional ko capture is not allowed.
+
+        - Unconditional ko capture is allowed except for a move at
+          `kom_pos'. Komaster parameters unchanged.
+
+
+File: gnugo.info,  Node: Superstrings,  Next: Reading Functions,  Prev: Alternate Komaster Schemes,  Up: Tactical Reading
+
+Superstrings
+============
+
+   A _superstring_ is an extended string, where the extensions are
+through the following kinds of connections:
+
+  1. Solid connections (just like ordinary string).
+            OO
+
+  2. Diagonal connection or one space jump through an intersection
+     where an opponent move would be suicide or self-atari.
+            ...
+            O.O
+            XOX
+            X.X
+
+  3. Bamboo joint.
+            OO
+            ..
+            OO
+
+  4. Diagonal connection where both adjacent intersections are empty.
+            .O
+            O.
+
+  5. Connection through adjacent or diagonal tactically captured stones.
+     Connections of this type are omitted when the superstring code is
+     called from `reading.c', but included when the superstring code is
+     called from `owl.c'.
+
+   Like a dragon, a superstring is an amalgamation of strings, but it is
+a much tighter organization of stones than a dragon, and its purpose is
+different. Superstrings are encountered already in the tactical reading
+because sometimes attacking or defending an element of the superstring
+is the best way to attack or defend a string. This is in contrast with
+dragons, which are ignored during tactical reading.
+
+
+File: gnugo.info,  Node: Reading Functions,  Next: Debugging,  Prev: Superstrings,  Up: Tactical Reading
+
+Reading Functions
+=================
+
+   Here we list the publically callable functions in `reading.c'.  The
+return codes of these functions are explained elsewhere (*note Reading
+Basics::). To briefly repeat this, a reading function return `WIN' if
+the attack succeeds unconditionally, 0 if it doesn't.  It returns
+`KO_A' or `KO_B' if the result depends on ko:
+   * Returns `KO_A' if the attack succeeds provided attacker is willing
+     to ignore any ko threat (the attacker makes the first ko capture).
+
+   * Returns `KO_B' if attack succeeds provided attacker has a ko threat
+     which must be answered (the defender makes the first ko capture).
+
+   * `int attack(int str, int *move)'
+          Determines if the string at `str' can be captured, and if so,
+          `*move' returns the attacking move, unless `move' is a null
+          pointer. Use a null pointer if you are interested in the
+          result of the attack but not the attacking move itself.
+
+   * `int find_defense(int str, int *move)'
+          Attempts to find a move that will save the string at `str'. It
+          returns `WIN' if such a move is found, with `*move' the
+          location of the saving move, unless `move' is a null pointer.
+          It is not checked that tenuki defends, so this may give an
+          erroneous answer if `!attack(str)'.
+
+   * `int attack_and_defend(int str, int *attack_code, int
+     *attack_point, int *defend_code, int *defense_point)'
+          This is a frontend to the `attack()' and `find_defense()'
+          functions, which guarantees a consistent result. If a string
+          cannot be attacked, 0 is returned and `*attack_code' is 0. If
+          a string can be attacked and defended, `WIN' is returned,
+          `*attack_code' and `*defend_code' are both non-zero, and
+          `*attack_point', `*defense_point' both point to vertices on
+          the board. If a string can be attacked but not defended, 0 is
+          again returned, `*attack_code' is non-zero, `*defend_code' is
+          0, and `*attack_point' points to a vertex on the board. This
+          function in particular guarantees that if there is an attack,
+          it will never return `defense_point = NO_MOVE', which means
+          the string is safe without defense. Separate calls to
+          `attack()' and `find_defense()' may occasionally give this
+          result, due to irregularities introduced by the persistent
+          reading cache.
+
+   * `int attack_either(int astr, int bstr)'
+          Returns true if there is a move which guarantees that at
+          least one of the strings `astr' and `bstr' can be captured. A
+          typical application for this is in connection patterns, where
+          after a cut it suffices to capture one of the cutting stones.
+          The current implementation only looks for uncoordinated
+          attacks. This is insufficient to find double ataris or moves
+          such as `a' in positions like
+                      XOOOOOOOX
+                      XOXXOXXOX
+                      XX..a..XX
+                      ---------
+          where neither of the threatened `X' stones can be captured
+          outright.  Still either can be captured by a move down to `a'.
+
+   * `int defend_both(int astr, int bstr)'
+          Returns true if both the strings `astr' and `bstr' can be
+          defended simultaneously or if there is no attack. A typical
+          application for this is in connection patterns, where after a
+          cut it's necessary to defend both cutting stones. The current
+          implementation only makes halfhearted attempts to find
+          coordinated defense moves. A proper implementation would
+          require some serious reading.
+
+   * `int break_through(int apos, int bpos, int cpos)'
+          returns `WIN' if a position can succesfully be broken through
+          and `CUT' if it can be cut. The position is assumed to have
+          the shape (the colors may be reversed)
+               .O.       dbe
+               OXO       aFc
+          It is `X' to move and try to capture at least one of `a',
+          `b', and `c'. If this succeeds, `X' is said to have broken
+          through the position. Otherwise `X' may try to cut through
+          the position, which means keeping `F' safe and getting a
+          tactically safe string at either `d' or `e'. *Important*:
+          `a', `b', and `c' must be given in the correct order.
+
+   * `int attack_threats(int str, int max_points, int moves[], int
+     codes[])'
+          Return up to max_threats threats to capture the string at
+          `str'. If the string is directly attackable the number of
+          threats is reported to be 0. NOTE: You can call
+          attack_threats with `moves[]' and `codes[]' already partly
+          filled in. So if you want to get the threats from scratch,
+          you have to set them to 0 yourself.
+
+   * `int safe_move(int move, int color)'
+          Checks whether a move at `move' is illegal or can immediately
+          be captured. If `stackp==0' the result is cached. If the move
+          only can be captured by a ko, it's considered safe.
+
+   * `void purge_persistent_reading_cache()'
+          Remove persistent cache entries which are no longer current.
+
+   * `void reading_hotspots(float values[BOARDMAX])'
+          Based on the entries in the reading cache and their nodes
+          field, compute where the relatively most expensive tactical
+          reading is going on.
+
+
+File: gnugo.info,  Node: Debugging,  Prev: Reading Functions,  Up: Tactical Reading
+
+Debugging the reading code
+==========================
+
+   The reading code searches for a path through the move tree to
+determine whether a string can be captured. We have a tool for
+investigating this with the `--decidestring' option. This may be run
+with or without an output file.
+
+   Simply running
+
+
+     `gnugo -t -l [input file name] -L [movenumber] --decidestring [location]'
+
+will run `attack()' to determine whether the string can be captured.
+If it can, it will also run `find_defense()' to determine whether or
+not it can be defended. It will give a count of the number of
+variations read. The `-t' is necessary, or else GNU Go will not report
+its findings.
+
+   If we add `-o OUTPUT FILE' GNU Go will produce an output file with
+all variations considered. The variations are numbered in comments.
+
+   This file of variations is not very useful without a way of
+navigating the source code. This is provided with the GDB source file,
+listed at the end. You can source this from GDB, or just make it your
+GDB init file.
+
+   If you are using GDB to debug GNU Go you may find it less confusing
+to compile without optimization. The optimization sometimes changes the
+order in which program steps are executed. For example, to compile
+`reading.c' without optimization, edit `engine/Makefile' to remove the
+string `-O2' from the file, touch `engine/reading.c' and make. Note
+that the Makefile is automatically generated and may get overwritten
+later.
+
+   If in the course of reading you need to analyze a result where a
+function gets its value by returning a cached position from the hashing
+code, rerun the example with the hashing turned off by the command line
+option `--hash 0'. You should get the same result. (If you do not,
+please send us a bug report.) Don't run `--hash 0' unless you have a
+good reason to, since it increases the number of variations.
+
+   With the source file given at the end of this document loaded, we
+can now navigate the variations. It is a good idea to use cgoban with a
+small `-fontHeight', so that the variation window takes in a big
+picture. (You can resize the board.)
+
+   Suppose after perusing this file, we find that variation 17 is
+interesting and we would like to find out exactly what is going on here.
+
+   The macro 'jt n' will jump to the n-th variation.
+
+
+     (gdb) set args -l [filename] -L [move number] --decidestring [location]
+     (gdb) tbreak main
+     (gdb) run
+     (gdb) jt 17
+
+will then jump to the location in question.
+
+   Actually the attack variations and defense variations are numbered
+separately. (But `find_defense()' is only run if `attack()' succeeds,
+so the defense variations may or may not exist.) It is redundant to
+have to tbreak main each time. So there are two macros avar and dvar.
+
+
+     (gdb) avar 17
+
+restarts the program, and jumps to the 17-th attack variation.
+
+
+     (gdb) dvar 17
+
+jumps to the 17-th defense variation. Both variation sets are found in
+the same sgf file, though they are numbered separately.
+
+   Other commands defined in this file:
+
+
+
+     `dump' will print the move stack.
+     `nv' moves to the next variation
+     `ascii i j' converts (i,j) to ascii
+     
+     #######################################################
+     ###############      .gdbinit file      ###############
+     #######################################################
+     
+     # this command displays the stack
+     
+     define dump
+     set dump_stack()
+     end
+     
+     # display the name of the move in ascii
+     
+     define ascii
+     set gprintf("%o%m\n",$arg0,$arg1)
+     end
+     
+     # display the all information about a dragon
+     
+     define dragon
+     set ascii_report_dragon("$arg0")
+     end
+     
+     define worm
+     set ascii_report_worm("$arg0")
+     end
+     
+     # move to the next variation
+     
+     define nv
+     tbreak trymove
+     continue
+     finish
+     next
+     end
+     
+     # move forward to a particular variation
+     
+     define jt
+     while (count_variations < $arg0)
+     nv
+     end
+     nv
+     dump
+     end
+     
+     # restart, jump to a particular attack variation
+     
+     define avar
+     delete
+     tbreak sgffile_decidestring
+     run
+     tbreak attack
+     continue
+     jt $arg0
+     end
+     
+     # restart, jump to a particular defense variation
+     
+     define dvar
+     delete
+     tbreak sgffile_decidestring
+     run
+     tbreak attack
+     continue
+     finish
+     next 3
+     jt $arg0
+     end
+
+
+File: gnugo.info,  Node: Life and Death Reading,  Next: Influence,  Prev: Tactical Reading,  Up: Top
+
+Life and Death Reading
+**********************
+
+   GNU Go does two very different types of life and death reading.
+First, there is the OWL code (Optics with Limit Negotiation) which
+attempts to read out to a point where the code in `engine/optics.c'
+(*note Eyes::) can be used to evaluate it.
+
+   Secondly, there is the code in `engine/life.c' which is a potential
+replacement for the code in `optics.c'.  It attempts to evaluate
+eyespaces more accurately than the code in `optics.c', but since it is
+fairly slow, it is partially disabled unless you run GNU Go with the
+option `--life'. The default use of the life code is that it can be
+called from `optics.c' when the graph based life and death code
+concludes that it needs an expert opinion.
+
+   Like the tactical reading code, a persistent cache is employed to
+maintain some of the owl data from move to move. This is an essential
+speedup without which GNU Go would play too slowly.
+
+* Menu:
+
+* The Owl Code::                Life and death reading
+* Owl Functions::               Functions in `owl.c'
+
+
+File: gnugo.info,  Node: The Owl Code,  Next: Owl Functions,  Up: Life and Death Reading
+
+The Owl Code
+============
+
+   The life and death code in `optics.c', described elsewhere (*note
+Eyes::), works reasonably well as long as the position is in a
+"terminal position", which we define to be one where there are no moves
+left which can expand the eye space, or limit it. In situations where
+the dragon is surrounded, yet has room to thrash around a bit making
+eyes, a simple application of the graph-based analysis will not work.
+Instead, a bit of reading is needed to reach a terminal position.
+
+   The defender tries to expand his eyespace, the attacker to limit it,
+and when neither finds an effective move, the position is evaluated. We
+call this type of life and death reading "Optics With
+Limit-negotiation" (OWL). The module which implements it is in
+`engine/owl.c'.
+
+   There are two reasonably small databases
+`patterns/owl_defendpats.db' and `patterns/owl_attackpats.db' of
+expanding and limiting moves. The code in `owl.c' generates a small
+move tree, allowing the attacker only moves from `owl_attackpats.db',
+and the defender only moves from `owl_defendpats.db'. In addition to
+the moves suggested by patterns, vital moves from the eye space
+analysis are also tested.
+
+   A third database, `owl_vital_apats.db' includes patterns which
+override the eyespace analysis done by the optics code. Since the
+eyeshape graphs ignore the complications of shortage of liberties and
+cutting points in the surrounding chains, the static analysis of
+eyespace is sometimes wrong. The problem is when the optics code says
+that a dragon definitely has 2 eyes, but it isn't true due to shortage
+of liberties, so the ordinary owl patterns never get into play.  In
+such situations `owl_vital_apats.db' is the only available measure to
+correct mistakes by the optics. Currently the patterns in
+`owl_vital_apats.db' are only matched when the level is 9 or greater.
+
+   The owl code is tuned by editing these three pattern databases,
+principally the first two.
+
+   A node of the move tree is considered `terminal' if no further moves
+are found from `apats.db' or `dpats.db', or if the function
+`compute_eyes_pessimistic()' reports that the group is definitely alive
+or dead. At this point, the status of the group is evaluated.  The
+functions `owl_attack()' and `owl_defend()', with usage similar to
+`attack()' and `find_defense()', make use of the owl pattern databases
+to generate the move tree and decide the status of the group.
+
+   The function `compute_eyes_pessimistic()' used by the owl code is
+very conservative and only feels certain about eyes if the eyespace is
+completely closed (i.e. no marginal vertices).
+
+   The maximum number of moves tried at each node is limited by the
+parameter `MAX_MOVES' defined at the beginning of `engine/owl.c'. The
+most most valuable moves are tried first, with the following
+restrictions:
+
+   * If `stackp > owl_branch_depth' then only one move is tried per
+     variation.
+
+   * If `stackp > owl_reading_depth' then the reading terminates, and
+     the situation is declared a win for the defender (since deep
+     reading may be a sign of escape).
+
+   * If the node count exceeds `owl_node_limit', the reading also
+     terminates with a win for the defender.
+
+   * Any pattern with value 99 is considered a forced move: no other
+     move is tried, and if two such moves are found, the function
+     returns false. This is only relevant for the attacker.
+
+   * Any pattern in `patterns/owl_attackpats.db' and
+     `patterns/owl_defendpats.db' with value 100 is considered a win: if
+     such a pattern is found by `owl_attack' or `owl_defend', the
+     function returns true. This feature must be used most carefully.
+
+   The functions `owl_attack()' and `owl_defend()' may, like `attack()'
+and `find_defense()', return an attacking or defending move through
+their pointer arguments. If the position is already won, `owl_attack()'
+may or may not return an attacking move. If it finds no move of
+interest, it will return `PASS', that is, `0'. The same goes for
+`owl_defend()'.
+
+   When `owl_attack()' or `owl_defend()' is called, the dragon under
+attack is marked in the array `goal'.  The stones of the dragon
+originally on the board are marked with goal=1; those added by
+`owl_defend()' are marked with goal=2. If all the original strings of
+the original dragon are captured, `owl_attack()' considers the dragon
+to be defeated, even if some stones added later can make a live group.
+
+   Only dragons with small escape route are studied when the functions
+are called from `make_dragons()'.
+
+   The owl code can be conveniently tested using the `--decidedragon
+LOCATION' This should be used with `-t' to produce a useful trace, `-o'
+to produce an SGF file of variations produced when the life and death of
+the dragon at LOCATION is checked, or both.  `--decideposition'
+performs the same analysis for all dragons with small escape route.
+
+
+File: gnugo.info,  Node: Owl Functions,  Prev: The Owl Code,  Up: Life and Death Reading
+
+Functions in `owl.c'
+====================
+
+   In this section we list the non-static functions in `owl.c'.  Note
+that calls to `owl_attack' and `owl_defend' should be made only when
+`stackp==0'. If you want to set up a position, then use the owl code to
+analyze it, you may call `do_owl_attack' and `do_owl_defend' with
+`stackp>0' but first you must set up the goal and boundary arrays. See
+`owl_does_defend' and `owl_substantial' for examples.
+
+   The reason that we do not try to write a general `owl_attack' which
+works when `stackp>0' is that we make use of cached information in the
+calls to `same_dragon' from the (static) function `owl_mark_dragon'.
+This requires the dragon data to be current, which it is not when
+`stackp>0'.
+
+   As with the tactical reading code, return codes are `WIN', 0, or
+`KO_A' or `KO_B' if the position is ko. Thus for example `owl_attack()'
+   * Returns `KO_A' if the attack prevails provided attacker is willing
+     to ignore any ko threat (the attacker makes the first ko capture).
+
+   * Returns `KO_B' if attack succeeds provided attacker has a ko threat
+     which must be answered (the defender makes the first ko capture).
+
+   The public functions in `owl.c' are:
+
+   * `void owl_analyze_semeai(int apos, int bpos, int *resulta, int
+     *resultb, int *move, int owl)'
+          Called when `apos' and `bpos' point to adjacent dragons of
+          the opposite color, both with `matcher_status' `DEAD' or
+          `CRITICAL', analyzes the semeai, assuming that the player of
+          the `apos' dragon moves first.
+
+   * `int owl_attack(int target, int *attack_point, int *certain)'
+          Returns true if a move can be found to attack the dragon at
+          `target', in which case `*attack_point' is the recommended
+          move.  `attack_point' can be a null pointer if only the
+          result is needed.  The array goal marks the extent of the
+          dragon. This must be maintained during reading. Call this
+          function only when `stackp==0'; otherwise you can call
+          `do_owl_attack' but you must set up the goal and boundary
+          arrays by hand first.
+
+   * `int owl_threaten_attack(int target, int *attack1, int *attack2)'
+          Returns true if the dragon at `target' can be captured given
+          two moves in a row. The first two moves to capture the dragon
+          are given as `*attack1' and `*attack2'.
+
+   * `int owl_defend(int target, int *defense_point, int *certain)'
+          Returns true if a move can be found to defend the dragon at
+          `target', in which case `*defense_point' is the recommended
+          move.
+     `defense_point' can be a null pointer if the result is not needed.
+
+   * `int owl_threaten_defense(int target, int *defend1, int *defend2)'
+          Returns true if the dragon at `target' can be defended given
+          two moves in a row. The first two moves to defend the dragon
+          are given as `*defend1' and `*defend2'.
+
+   * `void owl_reasons(int color)'
+          Add owl reasons. This function should be called once during
+          genmove.
+
+   * `int owl_does_defend(int move, int target)'
+          Use the owl code to determine whether the move at `move' makes
+          the dragon at `target' owl safe. This is used to test whether
+          tactical defenses are strategically viable and whether a
+          vital eye point does kill an owl critical dragon. Should be
+          called only when `stackp==0'.
+
+   * `int owl_confirm_safety(int move, int target, int *defense_point)'
+          Use the owl code to determine whether the dragon at `move' is
+          owl safe after an own move at `target'. This is used to
+          detect blunders. In case the dragon is not safe, it also
+          tries to find a defense point making `target' safe in a later
+          move.  Should be called only when `stackp==0'.
+
+   * `int owl_does_attack(int move, int target)'
+          Use the owl code to determine whether the attack move at
+          `move' of the dragon `target' is effective, i.e. whether it
+          kills the stones.
+     Should be called only when `stackp==0'.
+
+   * `int owl_connection_defends(int move, int target1, int target2)'
+          Use the owl code to determine whether connecting the two
+          dragons `target1' and `target2' by playing at `move' results
+          in a living dragon. Should be called only when `stackp==0'.
+
+   * `int  owl_lively(int pos)'
+          True unless `pos' is `EMPTY' or occupied by a lunch for the
+          goal dragon.  Used during make_domains (see the function
+          `is_lively' in `optics.c'). A "lively" worm is one that might
+          be alive, hence cannot be ignored in determining eye spaces.
+
+   * `int owl_substantial(int str)'
+          This function, called when `stackp==0', returns true if
+          capturing the string at `str' results in a live group.
+
+   * `int obvious_false_eye(int pos, int color)'
+          Conservative relative of topological_eye. Essentially the same
+          algorithm is used, but only tactically safe opponent strings
+          on diagonals are considered. This may underestimate the
+          false/half eye status, but it should never be overestimated.
+
+   * `int owl_topological_eye(int pos, int color)'
+          Retrieve topological eye values stored in the `half_eye[]'
+          array of the current owl data.
+
+
+File: gnugo.info,  Node: Influence,  Next: Moyo,  Prev: Life and Death Reading,  Up: Top
+
+Influence Function
+******************
+
+* Menu:
+
+* Influential Concepts::        Conceptual Outline of Influence
+* Influence Usage::		Where influence gets used in the engine
+* Influence and Territory::     Influence and Territory
+* Territorial Details::		Details of the Territory Valuation
+* The Influence Core::          The Core of the Influence Function
+* The Influence Algorithm::     The algorithm of `accumlate_influence()'
+* Permeability::                Permeability
+* Escape::                      Escape
+* Influential Patterns::	Patterns used by the Influence module
+* Influential Functions::       Functions in `engine/influence.c'
+* Influential Display::         Colored display and debugging of influence
+
+
+File: gnugo.info,  Node: Influential Concepts,  Next: Influence Usage,  Prev: Influence,  Up: Influence
+
+Conceptual Outline of Influence
+===============================
+
+   We define call stones "lively" if they cannot be tactically
+attacked, or if they have a tactical defense and belong to the player
+whose turn it is. Similarly, stones that cannot be strategically
+attacked (in the sense of the life-and-death analysis), or that have a
+strategical defense and belong to the player to move, are called
+"alive" while all other stones are called "alive". If we want to use
+the influence function before deciding the strategical status, all
+lively stones count as alive.
+
+   Every alive stone on the board works as an influence source, with
+influence of its color radiating outwards in all directions. The
+strength of the influence declines exponentially with the distance from
+the source.
+
+   Influence can only flow unhindered if the board is empty, however.
+All lively stones (regardless of color) act as influence barriers, as do
+connections between enemy stones that can't be broken through. For
+example the one space jump counts as a barrier unless either of the
+stones can be captured. Notice that it doesn't matter much if the
+connection between the two stones can be broken, since in that case
+there would come influence from both directions anyway.
+
+   We define "territory" to be the intersections where one color has no
+influence at all and the other player does have. We can introduce moyo
+and area concepts similar to those provided by the Bouzy algorithms in
+terms of the influence values for the two colors. "Territory" refers to
+certain or probable territory while "Moyo" refers to an area of
+dominant influence which is not necessarily guaranteed territory.
+"Area" refers to the breathing space around a group in which it can
+manoever if it is attacked.
+
+   In order to avoid finding bogus territory, we add extra influence
+sources at places where an invasion can be launched, e.g. at 3-3 under
+a handicap stone, in the middle of wide edge extensions and in the
+center of large open spaces anywhere. Similarly we add extra influence
+sources where intrusions can be made into what otherwise looks as solid
+territory, e.g. monkey jumps.
+
+   Walls typically radiate an influence that is stronger than the sum of
+the influence from the stones building the wall. To accommodate for this
+phenomenon, we also add extra influence sources in empty space at
+certain distances away from walls.
+
+   All these extra influence sources, as well as connections, are
+controlled by a pattern database, which consists of the two files
+patterns/influence.db and patterns/barriers.db. The details are
+explained in *Note Influential Patterns::.
+

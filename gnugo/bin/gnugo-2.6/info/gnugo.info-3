@@ -1,0 +1,1415 @@
+This is gnugo.info, produced by makeinfo version 4.0 from gnugo.texi.
+
+
+File: gnugo.info,  Node: Local Games,  Next: Eye Space,  Prev: Eyes,  Up: Eyes
+
+Local games
+===========
+
+   Each connected eyespace of a dragon affords a local game which yields
+a local game tree. The score of this local game is the number of eyes
+it yields. Usually if the players take turns and make optimal moves,
+the end scores will differ by 0 or 1. In this case, the local game may
+be represented by a single number, which is an integer or half integer.
+Thus if `n(O)' is the score if `O' moves first, both players alternate
+(no passes) and make alternate moves, and similarly `n(X)', the game
+can be represented by `{n(O)|n(X)}'. Thus {1|1} is an eye, {2|1} is an
+eye plus a half eye, etc.
+
+   The exceptional game {2|0} can occur, though rarely. We call an
+eyespace yielding this local game a CHIMERA.  The dragon is alive if
+any of the local games ends up with a score of 2 or more, so {2|1} is
+not different from {3|1}. Thus {3|1} is NOT a chimera.
+
+   Here is an example of a chimera:
+
+     XXXXX
+     XOOOX
+     XO.OOX
+     XX..OX
+     XXOOXX
+     XXXXX
+
+
+File: gnugo.info,  Node: Eye Space,  Next: Eye Space as Local Game,  Prev: Local Games,  Up: Eyes
+
+Eye spaces
+==========
+
+   In order that each eyespace be assignable to a dragon, it is
+necessary that all the dragons surrounding it be amalgamated (*note
+Amalgamation::). This is the function of `dragon_eye()'.
+
+   An EYE SPACE for a black dragon is a collection of vertices adjacent
+to a dragon which may not yet be completely closed off, but which can
+potentially become eyespace. If an open eye space is sufficiently
+large, it will yield two eyes. Vertices at the edge of the eye space
+(adjacent to empty vertices outside the eye space) are called MARGINAL.
+
+   Here is an example from a game:
+
+
+      |. X . X X . . X O X O
+      |X . . . . . X X O O O
+      |O X X X X . . X O O O
+      |O O O O X . O X O O O
+      |. . . . O O O O X X O
+      |X O . X X X . . X O O
+      |X O O O O O O O X X O
+      |. X X O . O X O . . X
+      |X . . X . X X X X X X
+      |O X X O X . X O O X O
+
+   Here the `O' dragon which is surrounded in the center has open eye
+space. In the middle of this open eye space are three dead `X' stones.
+This space is large enough that O cannot be killed. We can abstract the
+properties of this eye shape as follows.  Marking certain vertices as
+follows:
+
+
+      |- X - X X - - X O X O
+      |X - - - - - X X O O O
+      |O X X X X - - X O O O
+      |O O O O X - O X O O O
+      |! . . . O O O O X X O
+      |X O . X X X . ! X O O
+      |X O O O O O O O X X O
+      |- X X O - O X O - - X
+      |X - - X - X X X X X X
+      |O X X O X - X O O X O
+
+   the shape in question has the form:
+
+
+     !...
+       .XXX.!
+
+   The marginal vertices are marked with an exclamation point (`!').
+The captured `X' stones inside the eyespace are naturally marked `X'.
+
+   The precise algorithm by which the eye spaces are determined is
+somewhat complex. Documentation of this algorithm is in the comments in
+the source to the function `make_domains()' in `src/optics.c'.
+
+   The eyespaces can be conveniently displayed using a colored ascii
+diagram by running `gnugo -E'.
+
+
+File: gnugo.info,  Node: Eye Space as Local Game,  Next: Eye Example,  Prev: Eye Space,  Up: Eyes
+
+The eyespace as local game
+==========================
+
+   In the abstraction, an eyespace consists of a set of vertices
+labelled:
+
+
+     !  .  X
+
+   Tables of many eyespaces are found in the database
+`patterns/eyes.db'.  Each of these may be thought of as a local game.
+The result of this game is listed after the eyespace in the form
+:max,min, where max is the number of eyes the pattern yields if `O'
+moves first, while min is the number of eyes the pattern yields if `X'
+moves first. The player who owns the eye space is denoted `O'
+throughout this discussion.  Since three eyes are no better than two,
+there is no attempt to decide whether the space yields two eyes or
+three, so max never exceeds 2. Patterns with min>1 are omitted from the
+table.
+
+   For example, we have:
+
+     Pattern 1
+     
+       x
+     !x*x
+     
+     :2,1
+
+   Here notation is as above, except that `x' means `X' or `EMPTY'.
+The result of the pattern is not different if `X' has stones at these
+vertices or not.
+
+   We may abstract the local game as follows. The two players `O' and
+`X' take turns moving, or either may pass.
+
+   RULE 1: `O' for his move may remove any vertex marked `!' or marked
+`.' .
+
+   RULE 2: `X' for his move may replace a `.' by an `X'.
+
+   RULE 3: `X' may remove a `!'. In this case, each `.' adjacent to the
+"!" which is removed becomes a "!" . If an "`X'" adjoins the "!" which
+is removed, then that "`X'" and any which are connected to it are also
+removed. Any `.' which are adjacent to the removed `X''s then become `.'
+
+   Thus if `O' moves first he can transform the eyeshape in the above
+example to:
+
+      ...            or      !...
+       .XXX.!                  .XXX.
+
+   However if `X' moves he may remove the `!' and the `.'s adjacent to
+the `!' become `!' themselves. Thus if `X' moves first he may transform
+the eyeshape to:
+
+      !..           or    !..
+       .XXX.!              .XXX!
+
+   NOTE: A nuance which is that after the `X:1', `O:2' exchange below,
+`O' is threatening to capture three X stones, hence has a half eye to
+the left of 2.  This is subtle, and there are other such subtleties
+which our abstraction will not capture. Some of these at least can be
+dealt with by a refinements of the scheme, but we will content
+ourselves for the time being with a simplified
+
+
+      |- X - X X - - X O X O
+      |X - - - - - X X O O O
+      |O X X X X - - X O O O
+      |O O O O X - O X O O O
+      |1 2 . . O O O O X X O
+      |X O . X X X . 3 X O O
+      |X O O O O O O O X X O
+      |- X X O - O X O - - X
+      |X - - X - X X X X X X
+      |O X X O X - X O O X O
+
+   We will not attempt to characterize the terminal states of the local
+game (some of which could be seki) or the scoring.
+
+
+File: gnugo.info,  Node: Eye Example,  Next: Graphs,  Prev: Eye Space as Local Game,  Up: Eyes
+
+An example
+==========
+
+   Here is a local game which yields exactly one eye, no matter who
+moves first:
+
+
+     !
+     ...
+     ...!
+
+   Here are some variations, assuming `O' moves first.
+
+     !        (start position)
+     ...
+     ...!
+     
+     
+     ...      (after `O''s move)
+     ...!
+     
+     
+     ...
+     ..!
+     
+     
+     ...
+     ..
+     
+     
+     .X.       (nakade)
+     ..
+
+   Here is another variation:
+
+
+     !         (start)
+     ...
+     ...!
+     
+     
+     !         (after `O''s move)
+     . .
+     ...!
+     
+     
+     !         (after `X''s move)
+     . .
+     ..X!
+     
+     
+     . .
+     ..X!
+     
+     
+     . !
+     .!
+
+
+File: gnugo.info,  Node: Graphs,  Next: Eye Shape,  Prev: Eye Example,  Up: Eyes
+
+Graphs
+======
+
+   It is a useful observation that the local game associated with an
+eyespace depends only on the underlying graph, which as a set consists
+of the set of vertices, in which two elements are connected by an edge
+if and only if they are adjacent on the Go board. For example the two
+eye shapes:
+
+
+     ..
+      ..
+     
+     and
+     
+     ....
+
+   though distinct in shape have isomorphic graphs, and consequently
+they are isomorphic as local games. This reduces the number of
+eyeshapes in the database `patterns/eyes.db'.
+
+   A further simplification is obtained through our treatment of half
+eyes and false eyes. Such patterns are tabulated in the database hey.h.
+During make_worms, which runs before the eye space analysis, the half
+eye and false eye patterns are tabulated in the array `half_eye'.
+
+   A half eye is isomorphic to the pattern `(!.)' . To see this,
+consider the following two eye shapes:
+
+     XOOOOOO
+     X.....O
+     XOOOOOO
+     and:
+     
+     XXOOOOO
+     XOa...O
+     XbOOOOO
+     XXXXXX
+
+   These are equivalent eyeshapes, with isomorphic local games {2|1}.
+The first has shape:
+
+
+     !....
+
+   The second eyeshape has a half eye at a which is taken when `O' or
+`X' plays at `b'. This is found by the topological criterion (*note Eye
+Topology::).
+
+     ooo      half eye
+     OhO
+     *OX
+
+   and it is recorded in the half_eye array as follows. If `(i,j)' are
+the coordinates of the point `a', `half_eye[i][j].type==HALF_EYE' and
+`(half_eye[i][j].ki, half_eye[i][j].kj)' are the coordinates of `b'.
+
+   The graph of the eye_shape, ostensibly `....' is modified by
+replacing the left `.' by `!'.
+
+
+File: gnugo.info,  Node: Eye Shape,  Next: Eye Topology,  Prev: Graphs,  Up: Eyes
+
+Eye shape analysis
+==================
+
+   The patterns in `patterns/eyes.db' are compiled into graphs
+represented essentially by linked lists in `patterns/eyes.c'.
+
+   Each actual eye space as it occurs on the board is also compiled
+into a graph. Half eyes are handled as follows.  Referring to the
+example
+
+     XXOOOOO
+     XOa...O
+     XbOOOOO
+     XXXXXX
+
+   repeated from the preceding discussion, the vertex at `b' is added
+to the eyespace as a marginal vertex. The adjacency condition in the
+graph is a macro (in `optics.c'): two vertices are adjacent if they are
+physically adjacent, or if one is a half eye and the other is its key
+point.
+
+   In recognize_eyes, each such graph arising from an actual eyespace is
+matched against the graphs in `eyes.c'.  If a match is found, the
+result of the local game is known. If a graph cannot be matched, its
+local game is assumed to be {2|2}.
+
+
+File: gnugo.info,  Node: Eye Topology,  Prev: Eye Shape,  Up: Eyes
+
+Topology of Half Eyes and False Eyes
+====================================
+
+   A HALF EYE is a pattern where an eye may or may not materialize,
+depending on who moves first. Here is a half eye for `O':
+
+
+        OOOX
+        O..X
+        OOOX
+
+   A FALSE EYE is a cave which cannot become an eye. Here is are two
+examples of false eyes for `O':
+
+
+        OOX         OOX
+        O.O         O.OO
+        XOO         OOX
+
+   We describe now the topological algorithm used to find half eyes and
+false eyes.
+
+   False eyes and half eyes can locally be characterized by the status
+of the diagonal intersections from an eye space. For each diagonal
+intersection, which is not within the eye space, there are three
+distinct possibilities:
+
+   * occupied by an enemy (`X') stone, which cannot be captured.
+
+   * either empty and `X' can safely play there, or occupied    by an
+     `X' stone that can both be attacked and defended.
+
+   * occupied by an `O' stone, an `X' stone that can be attacked    but
+     not defended, or it's empty and `X' cannot safely play there.
+
+   We give the first possibility a value of two, the second a value of
+one, and the last a value of zero. Summing the values for the diagonal
+intersections, we have the following criteria:
+
+   * sum >= 4: false eye
+
+   * sum == 3: half eye
+
+   * sum <= 2: proper eye
+
+   If the eye space is on the edge, the numbers above should be
+decreased by 2. An alternative approach is to award diagonal points
+which are outside the board a value of 1. To obtain an exact
+equivalence we must however give value 0 to the points diagonally off
+the corners, i.e.  the points with both coordinates out of bounds.
+
+   The algorithm to find all topologically false eyes and half eyes is:
+
+   For all eye space points with at most one neighbor in the eye space,
+evaluate the status of the diagonal intersections according to the
+criteria above and classify the point from the sum of the values.
+
+
+File: gnugo.info,  Node: Moyo,  Next: Patterns,  Prev: Eyes,  Up: Top
+
+Moyo
+****
+
+* Menu:
+
+* Bouzy::                       Bouzy's 5/21 algorithm.
+* Implementation::              Implementation.
+* 5/21 Territory::              Estimation of territory.
+* 5/10 Moyo::                   Estimation of moyos.
+* 4/0 Area::                    Influence.
+* Weak groups::                 Weak groups.
+* Big move::                    Estimation of big global moves.
+* Caching::                     Caching of delta_*_color() functions.
+
+   The file `moyo.c' contains algorithms for the computation of a
+number of useful things. Most can be displayed visually using the `-m'
+option (*note Colored Display::).
+
+
+File: gnugo.info,  Node: Bouzy,  Next: Implementation,  Prev: Moyo,  Up: Moyo
+
+Bouzy's 5/21 algorithm
+======================
+
+   Bouzy's dissertation is available at:
+
+   <ftp://www.joy.ne.jp/welcome/igs/Go/computer/bbthese.ps.Z>
+
+   It contains an algorithm inspired by prior work of Zobrist and ideas
+from computer vision for determining territory. This algorithm is based
+on two simple operations, DILATION and EROSION. Applying dilation 5
+times and erosion 21 times determines the territory.
+
+   To get a feeling for the algorithm, take a position in the early
+middle game and try the colored display using the `-m 1' option in an
+RXVT window. The regions considered territory by this algorithm tend to
+coincide with the judgement of a strong human player.
+
+   Before running the algorithm, dead stones (`dragon.status==0') must
+be "removed."
+
+   Referring to page 86 of Bouzy's thesis, we start with a function
+taking a high value (ex : +128 for black, -128 for white) on stones on
+the goban, 0 to empty intersections. We may iterate the following
+operations:
+
+   *dilation* : for each intersection of the goban, if the intersection
+is >= 0, and not adjacent to a <0 one, then add to the intersection the
+number of adjacent >0 intersections. The same for other color : if the
+intersection is <=0, and not adjacent to a >0 one, then sub to it the
+number of <0 intersections.
+
+   *erosion* : for each intersection >0 (or <0), substract (or add) the
+number of adjacent <=0 (or >=0) intersection. Stop at zero.
+
+   It's unbelievable, but it works.
+
+   the algorithm is just : 5 dilations, then 21 erosion. The number of
+erosions should be 1+n(n-1) where n=number of dilation, since this
+permit to have an isolated stone to give no territory. Thus the couple
+4/13 also works, but it is often not good, for example when there is
+territory on the 6th line.
+
+   For example, let us start with a tobi.
+
+
+                128    0    128
+
+   1 dilation :
+
+
+                 1          1
+     
+            1   128    2   128   1
+     
+                 1          1
+
+   2 dilations :
+
+
+                 1          1
+     
+            2    2     3    2    2
+     
+        1   2   132    4   132   2   1
+     
+            2    2     3    2    2
+     
+                 1          1
+
+   3 dilations :
+
+
+                 1          1
+     
+            2    2     3    2    2
+     
+        2   4    6     6    6    4   2
+     
+     1  2   6   136    8   136   6   2   1
+     
+        2   4    6     6    6    4   2
+     
+            2    2     3    2    2
+     
+                 1          1
+
+   and so on...
+
+   Next, with the same example
+
+   3 dilations and 1 erosion :
+
+
+                  2     2     2
+     
+         0   4    6     6     6    4
+     
+     0   2   6   136    8    136   6    2
+     
+         0   4    6     6     6    4
+     
+                  2     2     2
+
+   3 dilations and 2 erosions :
+
+
+                      1
+     
+           2    6     6     6    2
+     
+           6   136    8    136   6
+     
+           2    6     6     6    2
+     
+                      1
+
+   3 dil. / 3 erosions :
+
+
+                5     6     5
+     
+           5   136    8    136   5
+     
+                5     6     5
+
+   3/4 :
+
+
+               3     5     3
+     
+           2  136    8    136   2
+     
+               3     5     3
+
+   3/5 :
+
+
+               1     4     1
+     
+              136    8    136
+     
+               1     4     1
+
+   3/6 :
+
+
+                     3
+     
+              135    8    135
+     
+                     3
+
+   3/7 :
+
+
+              132    8    132
+
+   I interpret this as a 1 point territory.
+
+
+File: gnugo.info,  Node: Implementation,  Next: 5/21 Territory,  Prev: Bouzy,  Up: Moyo
+
+Implementation
+==============
+
+   The file moyo.c currently uses this algorithm by three ways : 5/21
+for territory evaluation, 5/10 for moyo evaluation, and 4/0 for "area
+ownership", aka "big moyo" and meta cut/connect. Beware, these
+evaluations don't care of the life and death status of groups. It's
+only a "graphical" analysis of areas of influence.
+
+   After dragon evaluation, the function `make_moyo()' is called once
+to make the static evaluation of the goban : `make_moyo()' returns the
+difference in estimated territory (`terri_eval[0]') and computes
+`terri_eval[3]' and `moyo_eval[3]'. It also computes the `area_grid'
+for area ownership & (future) weak group analysis. All functions assume
+that stones evaluated `DEAD' in the Dragon structure are really dead,
+and act as they were removed from the board.  Technically, the
+dilations are made with binary operators (one row of the goban is
+stored in two integer, one black and one white), then the result is
+stored in a classical array `[19][19]' for the erosion computation.
+
+   These functions can be used with a color argument whose value is for
+current player or for opponent color: `delta_terri', `diff_terri',
+`delta_terri_color', `delta_moyo', `diff_moyo', `delta_moyo_color',
+`meta_connect' and `delta_area_color'.
+
+   The 5,21,10 ... values are stored in the constants:
+
+     #define MAX_DILAT 5
+     #define MAX_ERODE 21
+     /* 4 or 5 */
+     #define MOY_DILAT 5    /* for delta_moyo */
+     /* must MOY_ERODE <= MAX_ERODE if MOY_DILAT != MAX_DILAT*/
+     #define MOY_ERODE 10
+     
+     /* number of dilation for area ownership, must be <= MAX_DILAT */
+     #define OWNER_DILAT 4
+
+
+File: gnugo.info,  Node: 5/21 Territory,  Next: 5/10 Moyo,  Prev: Implementation,  Up: Moyo
+
+5/21 : territory
+================
+
+   As we have seen, 5 dilations/21 erosions produces GNU Go's image of
+territory. These values are determined by the following considerations:
+
+   * 5 dilations permit one to be sure of influence on very large scale
+
+   * 21 erosions induce that "isolated" stones don't make territory,
+     they only opponent territory
+
+   * at the end of the game, the evaluated territory matches the actual
+     score.
+
+   the public functions are :
+
+   * `int delta_terri(int ti, int tj, int color)'
+             - test the ti tj move as regards territorial evaluation.
+               This evaluation take care of captures, but no komi is
+               added. The returned value is the difference in
+               territorial evaluation between terri_test and first call
+               to `make_moyo()' the evaluation is for "color -
+               OTHER_COLOR".
+
+             - Tested values are cached, if different patterns test the
+               same ti tj, no extra computation is needed.  *Note*:
+               this function is not really used in GNU Go : future
+               usage could be for a end game module, or for displaying
+               who has the lead in the game.
+
+   * `int diff_terri(int ti, int tj, int color)'
+          wrapper for :
+          delta_terri(..,color)+delta_terri(..,other_color)
+
+   * `int terri_color(int m,int n)'
+          returns the color (WHITE,BLACK,EMPTY) of the m,n
+          intersection, as seen by the 5/21 algorithm. This is a public
+          access to already computed values during make_moyo().
+
+   * `int delta_terri_color(int ti,int tj, int color, int m, int n)'
+          returns the color `(WHITE,BLACK,EMPTY)' of the `m,n'
+          intersection, as seen by the 5/21 algorithm, after a test
+          move in `ti,tj'. The values of this function are computed and
+          cached during the `delta_terri()' evaluation.  Calling this
+          function also computes and cache `delta_terri()'.  (See Note
+          about caching `delta_*_color()' functions.)
+
+extern variables :
+
+
+`int terri_eval[3]' computed once by `make_moyo()'
+   `terri_eval[WHITE]' : white territory
+   `terri_eval[BLACK]' : black territory
+   `terri_eval[0]' : difference in territory (color - other_color)
+
+`int terri_test[3]' computed by `delta_terri()'
+   `terri_test[WHITE]' : territory evaluation from `delta_terri()' for BLACK
+   `terri_test[BLACK]' : territory evaluation from `delta_terri()' for WHITE
+   `terri_test[0]' : return of `delta_terri()', difference in territorial
+   evaluation between `terri_test()' and first call to `make_moyo()'.
+
+   Sample: `b' marks black's estimated territory (`X'), `w' or White
+(`O').
+
+   White to play : a move to J11 will bring +7 territorial balance.
+
+
+        A B C D E F G H J K L M N
+     13 b b b b . . . . . . . . . 13
+     12 b b b X b . . . . . . . . 12
+     11 b b b b b . . . . . O . . 11
+     10 b b b X b . . . . . . . . 10
+      9 b b b b . . . . . . X . . 9
+      8 b b X b . . . . . . . . . 8     White territory 22
+      7 b b b . . . . . . . . . . 7
+      6 . b b . . . . . . . . . . 6     Black territory 30
+      5 . . b . . . . . . . O . . 5
+      4 . . . X . . . . w w w w w 4
+      3 . . . . . . O w w O w w w 3
+      2 . . . . . . . w w w w w w 2
+      1 . . . . . . . w w w w w w 1
+        A B C D E F G H J K L M N
+
+   delta_terri :
+
+
+      20 21 20 19 11 10 10  8  7  6  3  4  3
+      23 23 21  X 12 11 13 10  8  6  3  3  4
+      25 26 25 22 10 11  8  8  7  6  O  5  5
+      24 26 27  X  9  8  8  5  5  2  3  7  7
+      25 27 26 13 10  7  7  7  5  4  X 11  8
+      23 25  X 12 10  9  6  8  5  6  5 10  5
+      21 19 18 13 11 11 11 10  6  5  5  4  5
+      14 14 14 13 11 12 13  7  5  2  2  2  2
+      14 12 11 11 12 11  7  5  2  0  O  1  1
+      11 10  9  X  9  5  4  2  0 -1 -1 -1  1
+       9  8 14  7  4  3  O -1 -1  O -1 -1 -1
+       8  7  6  7  6  2  1 -1 -1 -1 -1 -1 -1
+       5  4  5  4  3  2  1  0 -1 -1 -1 -1 -1
+
+
+File: gnugo.info,  Node: 5/10 Moyo,  Next: 4/0 Area,  Prev: 5/21 Territory,  Up: Moyo
+
+5/10 : moyo
+===========
+
+   5 dilations and 10 erode give a value we call MOYO. Moyo has an
+advantage over territory (5/21) since it permits immediate computation
+of the value of a move. It is intended to be used in conjunction with
+some patterns as an helper. The value 5 and 10 are empiric, other could
+have a similar effect : 4/8, 5/9 , etc...  Using 5 dilation permit to
+use some common results with territorial evaluation 5/21. The moyo
+evaluation does not count prisonners nor komi, but takes in account
+dragon `DEAD' stones.
+
+   the public functions are :
+
+   * `int delta_moyo(int ti, int tj, int color)'
+             - test the ti tj move as regards moyo evaluation.  The
+               returned value is the difference in territorial
+               evaluation between moyo_test and first call to
+               make_moyo() the evaluation is for "color - OTHER_COLOR".
+
+             - Tested values are cached, if different patterns test the
+               same ti tj, no extra computation is needed.
+
+   * `int diff_moyo(int ti, int tj, int color)'
+          wrapper for : `delta_moyo(..,color) +
+          delta_moyo(..,other_color)'
+
+   * `int moyo_color(int m,int n)'
+          returns the color (WHITE,BLACK,EMPTY) of the m,n
+          intersection, as seen by the 5/10 algorithm. This is a public
+          access to already computed values during make_moyo().
+
+   * `int delta_moyo_color(int ti,int tj, int color, int m, int n)'
+          returns the color (WHITE,BLACK,EMPTY) of the m,n
+          intersection, as seen by the 5/10 algorithm, after a test
+          move in ti,tj. The values of this function are NOT cached
+          during the delta_moyo() evaluation. But calling this function
+          caches his result for future call, and also computes and
+          cache `delta_moyo(ti,tj,color)'.  (See note about caching
+          `delta_*_color()' functions.)
+
+extern variables :
+
+`int moyo_eval[3]' is computed once by `make_moyo()'
+   `moyo_eval[WHITE]' : white moyo evaluation
+   `moyo_eval[BLACK]' : black moyo evaluation
+   `moyo_eval[0]' : difference in moyo (color - other_color)
+
+`int moyo_test[3]' is computed by delta_moyo for testing one move
+   `moyo_test[WHITE]' : white moyo evaluation from `delta_moyo()'
+   `moyo_test[BLACK]' : ...
+   `moyo_test[0]' : return of `delta_moyo()', difference in
+     moyo between test moyo and first moyo evaluation (color - other_color)
+
+   Example: white to play. A move at F4 would increase moyo balance by
+20 points for white.
+
+
+        A B C D E F G H J K L M N
+     13 b b b b b b b b b b . . . 13
+     12 b b b b b b b b b b . . . 12
+     11 b b b b X b b b b b . . . 11
+     10 b b X b b b b b b X . . . 10
+      9 b b b b b b . . . . . . . 9
+      8 b b b b b . . . . . O w . 8     White territory 18
+      7 . . b X b . . . . . w w w 7
+      6 . . . . . . . . . w w w w 6     Black territory 32
+      5 . . . . . . . . . w w w w 5
+      4 . . w O w . . . w w w w w 4   W/B moyo 36/50 : -14
+      3 . . w w w w . . w w O w w 3
+      2 . . . w . . . . . w w w w 2
+      1 . . . . . . . . . w w w w 1
+        A B C D E F G H J K L M N
+
+   `delta_moyo' :
+
+
+      15 17 19 23 24 26 21 21 18 19 15 11  9
+      18 20 20 24 29 29 24 23 20 21 20 14  8
+      17 23 19 16  X 26 33 31 21 19 25 14  8
+      16 20  X 15 16 35 34 32 29  X 13 10  5
+      16 16 18 15 16 17 23 39 19  7  4  4  2
+      15 16 13 29 17 25 24 20 12  6  O  0  0
+      14 16 17  X 23 23 21 18 14  6  1  0  0
+      20 13 13 13 16 19 31 14 11  7  3  0  0
+      17 16  6  8  9 25 25 23  8  5  2 -1  0
+      13 14 12  O 17 20 21 19 17  3  2 -1 -1
+      11 11  9 22 13 17 17 17 16 14  O -1 -1
+      11  9 21 20 21 13 16 15 14 12 12 -1 -1
+       9 21 20 20 20 21 13 14 12 12 12 12 -1
+
+
+File: gnugo.info,  Node: 4/0 Area,  Next: Weak groups,  Prev: 5/10 Moyo,  Up: Moyo
+
+4/0 : area ownership
+====================
+
+   This algorithm finds areas of influence, something bigger than
+classical moyo, with light connection between stones. This tool is
+intended to find weak and strong groups very early in the game.
+Currently it is used as an helper to find moves who cut ot connect
+these areas at a large scale. This module of GNU Go will probably
+evolve.
+
+   The first use will be to test if a tested move will :
+
+   * cut one opponent group in two (without creating an isolated stone)
+
+   * meta-connect two groups
+
+   The public functions are :
+
+   * `int area_stone(int m,int n)'
+
+   * `int area_space(int m,int n)'
+
+   * `int area_color(int m,int n)'
+          these functions return the number of stones, empty spaces and
+          the color of the area around the m n intersection. They are
+          just wrapper function to get data already stored in tables
+          computed by `make_moyo()'.
+
+   * `int area_tag(int m,int n)'
+
+   * `void set_area_tag(int m,int n,int tag)'
+          these funtions (currently unused) are wrappers to access to a
+          tag value associated with an area (for example his weakness).
+
+   * `int meta_connect(int ti, int tj,int color)'
+          Test one move `(ti, tj)' for its effect upon area--if the
+          number of distinct areas of each color changes, we can detect
+          some of these events:
+             - cut one opponent group in two (without creating an
+               isolated stone)
+
+             - meta-connect two groups of player color
+          meta_connect returns 15 point for each connection and 10
+          point for each cut. The objective is to give GNU Go the
+          ability to lauch early attacks on weak groups, and connect
+          his own groups. *Note*: the area ownership algorithm is a
+          little more complex than 5/21 or 5/10, for two reasons: we
+          need to correctly analyse the connection of two areas by a
+          secure kosumi stone, and the sum of areas is computed by
+          recursive functions.
+
+   * `int delta_area_color(int ti,int tj, int color, int m, int n)'
+          returns the color (`WHITE', `BLACK', `EMPTY') of the `(m, n)'
+          intersection, as seen by the 4/0 algorithm, after a test move
+          in `(ti,tj)'. The values of this function are NOT cached
+          during the meta_connect() evaluation. But calling this
+          function caches his result for future call, and also computes
+          and cache `meta_connect(ti,tj,color)'.  (See note about
+          caching `delta_*_color()' functions.)
+
+   The values for cutting/connecting can be changed (all this need
+tuning):
+
+
+     /* number of bonus points for each group connected and opponent
+        group cut
+     */
+     #define GR_BONUS_CONNECT 15
+     #define GR_BONUS_CUT 10
+
+   Sample:
+
+   The 'b' black area are changed to '-' for readibility. A white move
+at K5 got 25 points : this means that meta_connect thinks it would
+separate the J3 stone from K10, and connect the white stones together:
+
+
+        A B C D E F G H J K L M N
+     13 . . - - . w w . - - - . . 13
+     12 . - - - . w w . - - - - . 12
+     11 - - - - . w w . - - - - - 11
+     10 - - - X . O w . - X - - - 10
+      9 - - - - . w w . - - - - - 9
+      8 - - X - - w w . - - - - . 8     White territory 2
+      7 - - - - - w w . - - w w . 7
+      6 - - - . . w . - - w w w w 6     Black territory 4
+      5 . . . w w w - - - w w w w 5
+      4 w w w w w w - - - w O w w 4   W/B moyo 19/24 : -5
+      3 w w w O w w - - X - w w w 3
+      2 w w w w w w - - - - w w w 2
+      1 . w w w w w - - - - w w . 1
+        A B C D E F G H J K L M N
+
+   area 2  A11: color B,  2 stone  28 spaces area 4  A4: color W,  2
+stone  39 spaces area 9  G5: color B,  2 stone  46 spaces area 11  K6:
+color W,  1 stone  21 spaces
+
+   `meta_connect' :
+
+
+       .  .  .  .  .  .  .  .  .  .  .  .  .
+       .  .  .  .  .  .  .  .  .  .  .  .  .
+       .  .  .  .  .  .  .  .  .  .  .  .  .
+       .  .  .  X  .  O  . 10 10  X  .  .  .
+       .  .  .  .  .  . 10 10 25 25 10  .  .
+       .  .  X  .  . 10 10 25 25 25 25 10  .
+       .  .  .  . 10 10 10 25 25 25 25 25  .
+       .  .  .  .  . 10 25 25 25 25 25 10  .
+       .  .  .  .  .  . 25 25 25 25 10  .  .
+       .  .  .  .  .  .  . 25 25 10  O  .  .
+       .  .  .  O  .  .  .  .  X  .  .  .  .
+       .  .  .  .  .  .  .  . 15  .  .  .  .
+       .  .  .  .  .  .  . 15 15 15  .  .  .
+
+   After white K5, black played G3, now playing in the center could
+connect all white forces.
+
+
+        A B C D E F G H J K L M N
+     13 . . - - . w w . - - - . . 13
+     12 . - - - . w w . - - - - . 12
+     11 - - - - . w w . - - - - - 11
+     10 - - - X . O w . - X - - - 10
+      9 - - - - . w w . - - - - - 9
+      8 - - X - - w w . - - - - . 8     White territory 1
+      7 - - - - - w . w w w w w . 7
+      6 - - - . . . - w w w w w w 6     Black territory 4
+      5 . . . w w - - w w O w w w 5
+      4 w w w w w - - - - w O w w 4   W/B moyo 17/26 : -9
+      3 w w w O w - X - X - w w w 3
+      2 w w w w w - - - - - w w w 2
+      1 . w w w w - - - - - w w . 1
+        A B C D E F G H J K L M N
+
+   area 2  A11: color B,  2 stone  28 spaces area 4  A4: color W,  1
+stone  20 spaces area 8  F13: color W,  1 stone  12 spaces area 9  F5:
+color B,  2 stone  20 spaces area 12  H7: color W,  2 stone  27 spaces
+area 13  J13: color B,  1 stone  25 spaces
+
+   meta_connect :
+
+
+       .  .  .  .  .  .  .  .  .  .  .  .  .
+       .  .  .  .  .  .  .  .  .  .  .  .  .
+       .  .  .  .  .  .  . 15  .  .  .  .  .
+       .  .  .  X  .  O 15 15 15  X  .  .  .
+       .  .  .  . 15 30 15 15 15 15 15  .  .
+       .  .  X 15 30 30 30 15 15 15 15  .  .
+       .  . 15 30 30 30 30 30 15 15 15  .  .
+       .  . 15 30 30 30 30 30 15 15  .  .  .
+       .  .  . 15 30 30 30 30 15  O  .  .  .
+       .  .  .  . 15 30 30 15  .  .  O  .  .
+       .  .  .  O  . 15  X 10  X  .  .  .  .
+       .  .  .  .  .  .  .  .  .  .  .  .  .
+       .  .  .  .  .  .  . 15  .  .  .  .  .
+
+
+File: gnugo.info,  Node: Weak groups,  Next: Big move,  Prev: 4/0 Area,  Up: Moyo
+
+Weak groups
+===========
+
+   Dragon SAFETY is a modification of the dragon STATUS that takes into
+account the weakness of groups, as found by this algoritm.
+
+   Weak dragons with `dragon[m][n].status == UNKNOWN'
+
+   are tagged by
+
+   `dragon[m][n].safety = CRITICAL'
+
+   These are defined as having 2 or more stones with between 0 and 20
+points of area, computed using the 4/0 algorithm.
+
+   Function:
+
+   `int number_weak(int color)': returns the number of weak groups
+found for one color.
+
+
+File: gnugo.info,  Node: Big move,  Next: Caching,  Prev: Weak groups,  Up: Moyo
+
+Big move priority
+=================
+
+   (experimental) the use of search_big_move function aim to evaluate
+the value of moves by an empiric rule. Then, if the move proposed by
+genmove() got a lower priority, the big_move is played. Use option -p
+fearless to select it.
+
+   * `int very_big_move[3]'
+          public variable, contains the best territorial move found,
+          value and position.
+
+   * `void search_big_move(int ti, int tj, int color, int val)'
+          evaluate a proposed move, and keep it if it's the bigger found
+          current evaluation rule : `dt * 0.9 + 15 + val * 0.7', where
+          `val' is the value of the move as proposed by `shapes()' and
+          other modules, and `dt' is `diff_terri(ti,tj,color)'.
+
+
+File: gnugo.info,  Node: Caching,  Prev: Big move,  Up: Moyo
+
+Caching of delta_*_color() functions
+====================================
+
+   This 3 functions use the same goban stack for storing their results.
+The stack size is :
+
+
+     #define COLOR_STACK_SIZE 70
+     static goban_t boardstack[COLOR_STACK_SIZE];
+
+   This is intentionally left low to minimise memory usage. When the
+stack is full, the older values are suppressed when a new need of
+storage come.  (the stored values are available during one "movenum"
+turn)
+
+   * Every call to `delta_terri(ti,tj,color)' uses a stack level,
+     available for   further `delta_terri_color(ti,tj,color,?,?)' call.
+
+   * Since `delta_moyo()' (and `meta_connect') are often called, they
+     do not store their result in this stack every time--only when the
+     `delta_*_color()' is called.
+
+   *Beware*: all dead groups are considered as removed for these
+functions !
+
+
+File: gnugo.info,  Node: Patterns,  Next: Reading,  Prev: Moyo,  Up: Top
+
+The Pattern Code
+****************
+
+* Menu:
+
+* Patterns Overview::           Overview of the pattern database
+* Pattern Attributes::          Pattern Attributes
+* Defensive Patterns::          Defensive Patterns
+* Offensive Patterns::		Offensive Patterns
+* Helper Functions::            Function that assist the matcher
+* Wind Assistance::             Wind Assistance
+* Moyo Assistance::		Moyo Assistance
+* Tuning::			Tuning the Pattern Database
+* Autohelpers::                 Automatic generation of helper functions
+* Autohelper Functions::        Autohelper Functions
+* Pattern Matcher::             Implementation
+* Symmetry::                    Symmetry and Transformations
+* Matcher Details::             Details of implementation
+* Grid Optimization::           The "Grid" Optimisation
+* Joseki Compiler::             The joseki compiler
+* Advanced Features::           Advanced features of the joseki compiler
+* Connection Patterns::		Connection Patterns
+
+
+File: gnugo.info,  Node: Patterns Overview,  Next: Pattern Attributes,  Prev: Patterns,  Up: Patterns
+
+Patterns Overview
+=================
+
+   A database of patterns is supplied in patterns.db These are ascii
+representations, of the form:
+
+     Pattern EB115
+     
+     ??o|          sente hane
+     ?Oo|
+     XX*|
+     ...|
+     ?.?|
+     
+     :8,50,0,O,5,5,5,0,0,sente_hane_helper
+
+   where `O' marks a friendly stone, `X' marks enemy stones, `.' marks
+an empty vertex, `*' marks `O''s next move, `o' marks a square either
+containing `O' or empty but not `X'. (The symbol `x', which does not
+appear in this pattern, means `X' or `.')  Finally `?' Indicates a
+location where we don't care what is there, except that it cannot be
+off the edge of the board.
+
+   The line of `|''s along the right in this example is the edge of the
+board itself--this is an edge pattern. Corners can also be indicated.
+So this pattern describes a hane on the first line. The `o' makes sure
+that it would not be in atari immediately, though the matcher can check
+for this automatically (see class).  Elements are not generated for `?'
+markers, but they are not completely ignored - see below.
+
+   The line beginning `:' describes various attributes of the pattern,
+such as its symmetry and its importance.  Optionally, a function called
+a "helper" can be provided to assist the matcher in deciding the worth
+of the move, and a simple measure of the influence of nearby stones can
+be factored in. In this case, there is a helper, the sente_hane_helper,
+which may be found in helpers.c. Most patterns do not require a helper,
+and this field is filled with NULL.
+
+   The matcher searches the board for places where this layout appears
+on the board, and chooses the highest scoring pattern.
+
+
+File: gnugo.info,  Node: Pattern Attributes,  Next: Defensive Patterns,  Prev: Patterns Overview,  Up: Patterns
+
+Pattern Attributes
+==================
+
+   After the pattern, some supplementary information in the format:
+
+       :trfno, patwt, assistance, classification,
+            obonus, xbonus, splitbonus, minrand, maxrand, helper_function
+
+   Here trfno represents the number of transformations of the pattern to
+consider, usually 8 (no symmetry, for historical reasons), or one of
+`|', `\', `/', `-', `+', `X', where the line represents the axis of
+symmetry.  (E.g. `|' means symmetrical about a vertical axis.) `patwt'
+is the numerical pattern value - if there is a helper function (see
+below), it is the maximum weight it can return.
+
+   The assistance attribute reflects the fact that a pattern may have
+different values depending on external circumstances. For example, a
+pattern to connect is less important where I am powerful, but more
+important where my opponent is powerful. There are two different
+methods of assistance, wind assistance (*note Wind Assistance::) and
+moyo assistance (*note Moyo Assistance::).
+
+   The classification scheme is as follows : a sequence of zero or more
+of the following characters, each with a different meaning.
+
+   * Classification `s':
+          no checking is done. This is appropriate for sacrifice
+          patterns.  Otherwise, the matcher requires that the stone
+          played cannot be trivially captured.
+
+   * Classification `n':
+          In addition to usual check that the stone played cannot be
+          trivially captured, it is also confirmed that an opponent
+          move here could not be captured.
+
+   * Classification `O':
+          It is checked that every friendly (`O') stone of the pattern
+          belongs to a dragon which is classified as ALIVE or UNKNOWN.
+
+   * Classification `o':
+          It is checked that every friendly (`O') stone of the pattern
+          belongs to a dragon which is classified as DEAD or UNKNOWN.
+
+   * Classification `X':
+          It is checked that every opponent (`X') stone of the pattern
+          belongs to a dragon which is classified as ALIVE or UNKNOWN.
+
+   * Classification `x':
+          It is checked that every opponent (`X') stone of the pattern
+          belongs to a dragon which is classified as DEAD or UNKNOWN
+
+   * Classification `A':
+          If it is found that an `X' stone at `(m,n)' of the pattern
+          can be captured (`worm[m][n].attacki != 0') then the move at
+          `*' is tried.  If it is found to attack the stone,
+          `worm[m][n].attack' is set to equal `*'. This means that the
+          attacker will later use this move to attack the stone.
+
+   * Classification `D':
+          If it is found that an `O' stone at `(m,n)' of the pattern
+          can be captured (`worm[m][n].attacki != 0') then the move at
+          * is tried.  If it is found to defend the stone,
+          `worm[m][n].defend' is set to equal `*'. This means that the
+          defender will later use this move to defend the stone.
+
+   * Classification `C':
+          If two distinct `O' dragons occur in the pattern, the pattern
+          is given the minimum of the `connection_value' and the return
+          value of the pattern.
+
+   * Classification `B':
+          If two distinct `X' dragons occur in the pattern, the pattern
+          is given the minimum of the `connection_value' and the return
+          value of the pattern.
+
+   * Classification `L':
+          Match the pattern and run the helper, even if the weight is
+          less than that of the largest pattern found already. This is
+          appropriate for patterns whose significance is in the side
+          effects of the helpers.
+
+   One common classification is `OX' (which rejects pattern if either
+sides stones are dead). The string `-' may be used as a placeholder.
+(In fact any characters other than the above and `,' are ignored.)
+
+   `o' and `O' could conceivably appear in a class, meaning it applies
+only to `UNKNOWN'. Similarly `X' and `x' could be used together.
+
+   Some care must be taken with the `A' and `D' classes. If more than
+one worm that can be attacked or defended is present in the pattern,
+only one of them, arbitrarily chosen, will be found.
+
+   The classes `B' and `C' can be used together. If both connection
+values are greater than 0, the pattern is given a combined value which
+is the larger of them plus a fraction of the smaller one.
+
+   The values obtained for the `B' and `C' classes are further limited
+by the sum of the primary pattern weight (`patwt') and the assistance
+value.  The bonuses described below are applied after this limitation.
+
+   The field `obonus' is a bonus which is added when the pattern
+contains any dragon of color `O' with `dragon[m][n].safety != 0'.  This
+means that the dragon has size at least 2 and between 0 and 20 points
+of area, computed by the Bouzy 4/0 algorithm. Similarly the xbonus is
+added when the pattern contains at least one weak X dragon.
+
+   The field splitbonus is a bonus which is added when the move splits
+opponent dragons on a large scale or joins own dragons in the same
+manner (*note Moyo::).
+
+   To avoid playing the same moves each game, minrand and maxrand
+specifies a random adjustment of the move value, uniformly distributed
+between minrand and maxrand, inclusively. This feature is primarily
+used for fuseki moves, where the choice of exact moves is a matter of
+inspiration anyway.
+
+   helper_fn is the name of a C function which will be invoked to
+assist in the evaluation of the pattern. It will be passed the
+co-ordinates on the board of the pattern element marked `*', the
+rotation of the pattern which has been matched, and the color of the
+piece for whom the move is being considered.  (`O' in the key above).
+Facilities are provided for navigating around the pattern taking the
+rotation into account.
+
+
+File: gnugo.info,  Node: Defensive Patterns,  Next: Offensive Patterns,  Prev: Pattern Attributes,  Up: Patterns
+
+Defensive Patterns
+==================
+
+   Usually a pattern will only contribute a move if its value is large
+enough to outweigh all other moves which have been found. There is an
+exception to this, however. If the pattern classification string
+contains a `D', the pattern is a defensive one. If an `O' string is
+found in the pattern which can be captured, and if the move at `*'
+defends it, then the point of defense (worm[m][n].defendi,
+worm[m][n].defendj) is moved to `*'. This means that even if the
+pattern has small value, the defensive move will be remembered later
+when defender() is run.
+
+
+File: gnugo.info,  Node: Offensive Patterns,  Next: Helper Functions,  Prev: Defensive Patterns,  Up: Patterns
+
+Offensive Patterns
+==================
+
+   Another exception is patterns with a classification string containing
+an `A'. These patterns are offensive ones. If an `X' string is found in
+the pattern which can be captured but also defended, and if the move at
+`*' also attacks it, then the point of attack (worm[m][n].attacki,
+worm[m][n].attackj) is moved to `*'.  This means that even if the
+pattern has small value, the offensive move will be remembered later
+when attacker() is run. Notice that this means that the suggested move
+will never find an attack that wasn't found otherwise, but it can be
+used to capture enemy stones more efficiently or with better shape than
+the move attacker() would have found unassisted.
+
+
+File: gnugo.info,  Node: Helper Functions,  Next: Wind Assistance,  Prev: Offensive Patterns,  Up: Patterns
+
+Helper Functions
+================
+
+   Helper functions can be provided to assist the matcher in weighing up
+the importance of a move. The helper is supplied with the compiled
+pattern entry in the table, and the (absolute) position on the board of
+the `*' point.
+
+   One difficulty is that the helper must be able to cope with all the
+possible transformations of the pattern.  To help with this, a
+transformation number is supplied.  This number can be passed to a
+utility function `offset()' with the relative co-ordinates in the
+original, untransformed pattern. This function will return the actual
+board co-ordinates to use for the indicated stone.
+
+   The actual helper functions are in `helpers.c'. They are declared in
+`patterns.h'.
+
+   As an example to show how to write a helper function, we consider
+defend_bamboo_helper. This begins with a comment:
+
+     /*
+     
+     ?X?        ?X?
+     O.O        ObO
+     O.*        Oat
+     
+     */
+
+   The image on the left is the actual pattern. On the right we've
+taken this image and added letters to label (ti, tj), (ai, aj) and (bi,
+bj). Of course t is always at *, the point where GNU Go will move if
+the pattern is adopted.
+
+
+     int
+     defend_bamboo_helper (ARGS)
+     {
+       int ai, aj, bi, bj;
+       int tval=0;
+       int other=OTHER_COLOR(color);
+     
+       OFFSET(0, -1, ai, aj);
+       OFFSET(-1, -1, bi, bj);
+     
+       if (strategic_distance_to(other, ti, tj)>10)
+         return (0); /* solid connection is better */
+       if (TRYMOVE(bi, bj, other)) {
+         if (TRYMOVE(ai, aj, color)) {
+           if (safe_move(ti, tj, other))
+     	  tval=COMPUTE_SCORE;
+           popgo();
+         }
+         popgo();
+       }
+       return (tval);
+     }
+
+   The `OFFSET's tell GNU Go the positions of the two stones at
+`a=(ai,aj)' and `b=(bi,bj)'. The correctness of the coordinates
+(relative to `t=*=(ti,tj)') can be confirmed by consulting the diagram
+in the prefatory comment. The macro `TRYMOVE' invokes the function
+`trymove()', `ARGS' supplies standard arguments to the helper, and
+`COMPUTE_SCORE' assigns the value of the pattern (*note Pattern
+Attributes::).
+
+   The pattern is subjected to two tests. First, the strategic_distance
+to X (*note Dragon::) must not be too great. The rationale behind this
+test is that if the strategic distance is great, then simply making a
+solid connection probably secures one point more territory. On the
+other hand if the strategic distance is small, the region in question
+may not be secure territory, and the bamboo joint is often better.
+
+   Hand-coding helpers such as this one is a powerful tool but not
+always needed. The same functionality can often be obtained more easily
+using an autohelper (*note Autohelpers::).
+
+
+File: gnugo.info,  Node: Wind Assistance,  Next: Moyo Assistance,  Prev: Helper Functions,  Up: Patterns
+
+Wind Assistance
+===============
+
+   Wind assistance, `wind(ucutoff, uvalue, mycutoff, myvalue)', is
+based on the power of the stones in a neighborhood of the considered
+move. My power (`mypower') and your power (`upower') are measured by
+the function `testwind()'. The actual value of the wind assistance is
+given by the formula:
+
+   To calculate a color's power near the point `*', we sum `6-d') where
+`d' is the distance of a stone to `*', where the sum is over all stones
+of the given color with `d<6'.
+
+   `upower' and `ucutoff' must have the same sign, as must `mypower'
+and `mycutoff'.  In practice we have mostly used positive values for
+these parameters. We have always given uvalue and myvalue the value 1
+or in rare instances 2.
+
+   For example
+
+     "connect if invaded"
+     
+     OX..
+     .*.O
+     .?.?
+     
+     :8,55,wind(20,1,0,0),-,0,0,0,NULL
+
+   These represent additional biases to the score for the influence of
+nearby stones. The first pair are a multiplier and a cutoff for enemy
+stones, and the second for friendly stones. The actual weight (computed
+in the function `compute_score()') is given by the formula:
+
+       uvalue*min(upower,abs(ucutoff)) + myvalue*min(mypower,abs(mycutoff)).
+
+   Typically uvalue (if nonzero) would have the value 1, meaning that
+the score increases by 1 for each increase in upower, up to a maximum of
+ucutoff, after which it does not increase. Thus in this example, the
+value of the pattern can increase up to 75, becoming more valuable when
+the opponent becomes strong in the area. This is a good feature for
+patterns which help the safety of our group.
+
+
+File: gnugo.info,  Node: Moyo Assistance,  Next: Tuning,  Prev: Wind Assistance,  Up: Patterns
+
+Moyo Assistance
+===============
+
+   Moyo assistance, `moyo(moyocutoff, moyovalue)', is based on an
+estimation of "moyo" (*note Moyo::).
+
+   In practice this is a combination of territory and influence for both
+players. The function `delta_moyo()' computes the difference in moyo
+between the current position and after the move has been made. The
+actual value of the moyo assistance is given by the formula:
+
+       moyovalue*min(deltamoyo,moyocutoff)
+

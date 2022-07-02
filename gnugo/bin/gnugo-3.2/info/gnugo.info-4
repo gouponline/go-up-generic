@@ -1,0 +1,1169 @@
+This is gnugo.info, produced by makeinfo version 4.0b from gnugo.texi.
+
+INFO-DIR-SECTION GNU games
+START-INFO-DIR-ENTRY
+* GNU go: (gnugo).          The GNU Go program
+END-INFO-DIR-ENTRY
+
+
+File: gnugo.info,  Node: String Functions,  Prev: Status Functions,  Up: Libboard
+
+String and Miscellaneous Functions
+----------------------------------
+
+   These functions are used for getting information like liberties,
+member stones and similar about strings. Most of these are here because
+they have a particularly efficient implementation through access to the
+incremental data structures behind the scene.
+
+   * `void find_origin(int str)'
+          Find the origin of a worm or a cavity, i.e. the point with the
+          smallest 1D board coordinate. The idea is to have a canonical
+          reference point for a string (*note Worms::).
+
+   * `int findstones(int str, int maxstones, int *stones)'
+          Find the stones of the string at `str'. `str' must not be
+          empty. The locations of up to `maxstones' stones are written
+          into `*stone'. The full number of stones is returned.
+
+   * `int countstones(int str)'
+          Count the number of stones in a string.
+
+   * `void mark_string(int str, char mx[BOARDMAX], char mark)'
+          For each stone in the string at pos, set mx to value mark. If
+          some of the stones in the string are marked prior to calling
+          this function, only the connected unmarked stones starting
+          from pos are guaranteed to become marked. The rest of the
+          string may or may not become marked. (In the current
+          implementation, it will.)
+
+   * `int liberty_of_string(int pos, int str)'
+          Returns true if `pos' is a liberty of the string at `str'.
+
+   * `int neighbor_of_string(int pos, int str)'
+          Returns true if pos is adjacent to the string at str.
+
+   * `int same_string(int str1, int str2)'
+          Returns true if `str1' and `str2' belong to the same string.
+
+   * `int findlib(int str, int maxlib, int *libs)' int findlib
+          Find the liberties of the string at str. str must not be
+          empty. The locations of up to maxlib liberties are written
+          into `libs[]'. The full number of liberties is returned.  If
+          you want the locations of all liberties, whatever their
+          number, you should pass `MAXLIBS' as the value for maxlib and
+          allocate space for `libs[]' accordingly.
+
+   * `int countlib(int str)'
+          Count the number of liberties of the string at `str', which
+          must not be empty.
+
+   * `int fastlib(int pos, int color, int ignore_capture)'
+          Count the liberties a stone of the given color would get if
+          played at `pos'.  Captures are ignored based on the
+          ignore_capture flag.  (pos) must be empty.  It will fail if
+          there is more than one string neighbor of the same color.  In
+          this case, the return value is -1.  Captures are not handled,
+          so if ignore_capture is 0, and a capture is required, -1 is
+          returned. The intent of this function is to be as fast as
+          possible, not necessarily complete.
+
+   * `int approxlib(int pos, int color, int maxlib, int *libs)'
+          Find the liberties a stone of the given color would get if
+          played at `pos', ignoring possible captures of opponent
+          stones.  `pos' must be empty. If `libs != NULL', the
+          locations of up to `maxlib' liberties are written into
+          `libs[]'. The counting of liberties may or may not be halted
+          when maxlib is reached. The number of liberties found is
+          returned. If you want the number or the locations of all
+          liberties, however many they are, you should pass `MAXLIBS'
+          as the value for `maxlib' and allocate space for `libs[]'
+          accordingly.
+
+   * `int count_common_libs(int str1, int str2)'
+          Find the number of common liberties of the two strings at
+          str1 and str2.
+
+   * `int find_common_libs(int str1, int str2, int maxlib, int *libs)'
+          Find the common liberties of the two strings at `str1' and
+          `str2'. The locations of up to maxlib common liberties are
+          written into `libs[]'.  The full number of common liberties
+          is returned.  If you want the locations of all common
+          liberties, whatever their number, you should pass `MAXLIBS'
+          as the value for maxlib and allocate space for `libs[]'
+          accordingly.
+
+   * `int have_common_lib(int str1, int str2, int *lib)'
+          Determine whether two strings have at least one common
+          liberty.  If they have and `lib != NULL', one common liberty
+          is returned in *lib.
+
+     `int chainlinks(int str, int adj[MAXCHAIN])'
+          Returns (in the `adj' array) the chains surrounding the
+          string at `str'. The number of chains is returned.
+
+     `int chainlinks2(int str, int adj[MAXCHAIN], int lib)'
+          Returns (in the `adj' array) the chains surrounding the
+          string at `str' having exactly `lib' liberties. The number of
+          chains is returned.
+
+Miscellaneous Functions
+-----------------------
+
+   * ` incremental_order_moves(int move, int color, int str, int
+     *number_edges, int *number_same_string, int *number_own, int
+     *number_opponent, int *captured_stones, int *threatened_stones,
+     int *saved_stones, int *number_open)'
+          Help collect the data needed by `order_moves()' in
+          `reading.c'.  It's the caller's responsibility to initialize
+          the result parameters.
+
+
+File: gnugo.info,  Node: Move Generation,  Next: Worms and Dragons,  Prev: Libboard,  Up: Top
+
+Move generation
+***************
+
+* Menu:
+
+* MG Intro::                    Introduction.
+* MG Overview ::                Overview.
+* MG Info::                     Information gathering.
+* MG Reasons::                  Generation of move reasons.
+* MG Details::                  Detailed Descriptions of Move Reasons
+* Valuation:: 			Valuating the moves
+* Move Generation Functions::   Move Generation Functions
+* Move Valuation Functions::	Move Valuation Functions
+* End Game::			Endgame move generation
+
+
+File: gnugo.info,  Node: MG Intro,  Next: MG Overview,  Prev: Move Generation,  Up: Move Generation
+
+Introduction
+============
+
+   GNU Go 3.0 introduced a move generation scheme substantially
+different from earlier versions. In particular, it was different from
+the method of move generation in GNU Go 2.6.
+
+   In the old scheme, various move generators suggested different moves
+with attached values. The highest such value then decided the move.
+There were two important drawbacks with this scheme:
+
+   * Efficient multipurpose moves could only be found by patterns which
+     explicitly looked for certain combinations, such as a simultaneous
+     connection and cut. There was also no good way to e.g. choose among
+     several attacking moves.
+
+   * The absolute move values were increasingly becoming harder to tune
+     with the increasing number of patterns. They were also fairly
+     subjective and the tuning could easily break in unexpected ways
+     when something changed, e.g. the worm valuation.
+
+   The basic idea of the new move generation scheme is that the various
+move generators suggest reasons for moves, e.g. that a move captures
+something or connects two strings, and so on. When all reasons for the
+different moves have been found, the valuation starts. The primary
+advantages are
+
+   * The move reasons are objective, in contrast to the move values in
+     the old scheme. Anyone can verify whether a suggested move reason
+     is correct.
+
+   * The centralized move valuation makes tuning easier. It also allows
+     for style dependent tuning, e.g. how much to value influence
+     compared to territory. Another possibility is to increase the value
+     of safe moves in a winning position.
+
+
+File: gnugo.info,  Node: MG Overview,  Next: MG Info,  Prev: MG Intro,  Up: Move Generation
+
+Overview
+========
+
+   The engine of GNU Go takes a position and a color to move and
+generates the (supposedly) optimal move. This is done by the function
+genmove() in engine/genmove.c.
+
+   The move generation is done in three steps:
+
+  1. information gathering
+
+  2. generation of moves and move reasons
+
+  3. valuation of the suggested moves
+
+   This is somewhat simplified. In reality there is some overlap between
+the steps.
+
+
+File: gnugo.info,  Node: MG Info,  Next: MG Reasons,  Prev: MG Overview,  Up: Move Generation
+
+Information gathering
+=====================
+
+   First we have to collect as much information as possible about the
+current position. Such information could be life and death of the
+groups, moyo status, connection of groups and so on. Information
+gathering are performed by the following functions, called in this
+order:
+
+   * `make_worms'
+          Collect information about all connected sets of stones
+          (strings) and cavities.  This information is stored in the
+          `worm' array.
+
+   * `make_dragons'
+          Collect information about connected strings, which are called
+          dragons.  Important information here is number of eyes, life
+          status, and connectedness between strings. The information is
+          stored in the arrays `dragon' but also in `dragon2'.
+
+   *Note Examining the Position::, for a more exact itinerary of the
+information-gathering portion of the move-generation proces.
+
+   *Note Worms and Dragons::, for more detailed documentation about
+`make_worms' and `make_dragons'.
+
+
+File: gnugo.info,  Node: MG Reasons,  Next: MG Details,  Prev: MG Info,  Up: Move Generation
+
+Generation of move reasons
+==========================
+
+   Each move generator suggests a number of moves.  It justifies each
+move suggestion with one or move "move reasons".  These move reasons
+are collected at each intersection where the moves are suggested for
+later valuation.  A partial list of of move reasons considered by GNU
+Go are:
+
+`ATTACK_MOVE'
+`DEFEND_MOVE'
+     Attack or defend a worm.
+
+`ATTACK_THREAT_MOVE'
+`DEFEND_THREAT_MOVE'
+     Threaten to attack or defend a worm.
+
+`EITHER_MOVE'
+     A move that either achieves one goal or another (at the moment
+     this only used for attacks on worms).
+
+`ALL_MOVE'
+     At the moment this is used for a move that defends two worms
+     threatened by a double attack.
+
+`CONNECT_MOVE'
+`CUT_MOVE'
+     Connect or cut two worms.
+
+`ANTISUJI_MOVE'
+     Declare an antisuji or forbidden move.
+
+`SEMEAI_MOVE'
+`SEMEAI_THREAT'
+     Win or threaten to win a semeai.
+
+`EXPAND_TERRITORY_MOVE'
+`BLOCK_TERRITORY_MOVE'
+
+`EXPAND_MOYO_MOVE'
+     Move expanding/blocking our territory/moyo. These reasons are at
+     the moment treated identically.
+
+`VITAL_EYE_MOVE'
+     A vital point for life and death.
+
+`STRATEGIC_ATTACK_MOVE'
+`STRATEGIC_DEFEND_MOVE'
+     Moves added by 'a' and 'd' class patterns (*note Pattern
+     Classification::) which (perhaps intangibly) attack or defend a
+     dragon.
+
+`OWL_ATTACK_MOVE'
+`OWL_DEFEND_MOVE'
+     An owl attack or defense move.
+
+`OWL_ATTACK_THREAT'
+`OWL_DEFEND_THREAT'
+     A threat to owl attack or defend a group.
+
+`OWL_PREVENT_THREAT'
+     A move to remove an owl threat.
+
+`UNCERTAIN_OWL_ATTACK'
+`UNCERTAIN_OWL_DEFENSE'
+     An uncertain owl attack or defense. This means that the owl code
+     could not decide the outcome, because the owl node limit was
+     reached.
+
+`MY_ATARI_ATARI_MOVE'
+     A move that starts a chain of ataris, eventually leading to a
+     capture.
+
+`YOUR_ATARI_ATARI_MOVE'
+     A move that if played by the opponent starts a chain of ataris for
+     the opponent, leading to capture, which is also a safe move for
+     us. Preemptively playing such a move almost always defends the
+     threat.
+
+   The attack and defend move types can have a suffix to denote moves
+whose result depends on a ko, e.g. `OWL_ATTACK_MOVE_GOOD_KO'. Here
+`..._GOOD_KO' and `..._BAD_KO' correspond to `KO_A' and `KO_B' as
+explained in *Note Ko::.  See `engine/move_reasons.h' for the full of
+move reasons.
+
+   *NOTE:* Some of these are reasons for *not* playing a move.
+
+   More detailed discussion of these move reasons will be found in the
+next section.
+
+
+File: gnugo.info,  Node: MG Details,  Next: Valuation,  Prev: MG Reasons,  Up: Move Generation
+
+Detailed Descriptions of various Move Reasons
+=============================================
+
+* Menu:
+
+* Attack and Defense::             Worm Attack and Defense
+* Threats to Attack or Defend::    Worm Threats
+* Multi Attack or Defense::        Combined Attacks and Defenses
+* Cutting and Connecting::         Cutting and Connecting moves
+* Semeai::                         Semeai winning moves
+* Making eyes::                    Vital eye moves
+* Antisuji moves::                 Never play these!
+* Territorial moves::              Block or expand territory
+* Owl attack and defense::         Owl Attack and Defense
+* Combination Attacks::            Coordinated threats such as double ataris
+
+
+File: gnugo.info,  Node: Attack and Defense,  Next: Threats to Attack or Defend,  Up: MG Details
+
+Attacking and defending moves
+-----------------------------
+
+   A move which tactically captures a worm is called an "attack move"
+and a move which saves a worm from being tactically captured is called a
+"defense move". It is understood that a defense move can only exist if
+the worm can be captured, and that a worm without defense only is
+attacked by moves that decrease the liberty count or perform necessary
+backfilling.
+
+   It is important that all moves which attack or defend a certain
+string are found, so that the move generation can make an informed
+choice about how to perform a capture, or find moves which capture
+and/or defend several worms.
+
+   Attacking and defending moves are first found in `make_worms' while
+it evaluates the tactical status of all worms, although this step only
+gives one attack and defense (if any) move per worm. Immediately after,
+still in `make_worms', all liberties of the attacked worms are tested
+for additional attack and defense moves. More indirect moves are found
+by `find_attack_patterns' and `find_defense_patterns', which match the
+A (attack) and D (defense) class patterns in `patterns/attack.db' and
+`patterns/defense.db' As a final step, all moves which fill some
+purpose at all are tested whether they additionally attacks or defends
+some worm. (Only unstable worms are analyzed.)
+
+
+File: gnugo.info,  Node: Threats to Attack or Defend,  Next: Multi Attack or Defense,  Prev: Attack and Defense,  Up: MG Details
+
+Threats to Attack or Defend
+---------------------------
+
+   A threat to attack a worm, but where the worm can be defended is
+used as a secondary move reason.  This move reason can enhance the
+value of a move so that it becomes sente.  A threatening move without
+any other justification can also be used as a ko threat.  The same is
+true for a move that threatens defense of a worm, but where the worm
+can still be captured if the attacker doesn't tenuki.
+
+   Threats found by the owl code are called *owl threats* and they have
+their own owl reasons.
+
+
+File: gnugo.info,  Node: Multi Attack or Defense,  Next: Cutting and Connecting,  Prev: Threats to Attack or Defend,  Up: MG Details
+
+Multiple attack or defense moves
+--------------------------------
+
+   Sometimes a move attacks at least one of a number of worms or
+simultaneously defends all of several worms. These moves are noted by
+their own move reasons.
+
+
+File: gnugo.info,  Node: Cutting and Connecting,  Next: Semeai,  Prev: Multi Attack or Defense,  Up: MG Details
+
+Cutting and connecting moves
+----------------------------
+
+   Moves which connect two distinct dragons are called `connecting
+moves'.  Moves which prevent such connections are called "cutting
+moves". Cutting and connecting moves are primarily found by pattern
+matching, the `C' and `B' class patterns.
+
+   A second source of cutting and connecting moves comes from the attack
+and defense of cutting stones. A move which attacks a worm
+automatically counts as a connecting move if there are multiple dragons
+adjacent to the attacked worm. Similarly a defending move counts as a
+cutting move. The action taken when a pattern of this type is found is
+to induce a connect or cut move reason.
+
+   When a cut or connect move reason is registered, the involved dragons
+are of course stored. Thus the same move may cut and/or connect several
+pairs of dragons.
+
+
+File: gnugo.info,  Node: Semeai,  Next: Making eyes,  Prev: Cutting and Connecting,  Up: MG Details
+
+Semeai winning moves
+--------------------
+
+   A move which is necessary to win a capturing race is called a "semeai
+move". These are similar to attacking moves, except that they involve
+the simultaneous attack of one worm and the defense of another. As for
+attack and defense moves, it's important that all moves which win a
+semeai are found, so an informed choice can be made between them.
+
+   Semeai move reasons should be set by the semeai module. However this
+has not been implemented yet. One might also wish to list moves which
+increase the lead in a semeai race (removes ko threats) for use as
+secondary move reasons. Analogously if we are behind in the race.
+
+
+File: gnugo.info,  Node: Making eyes,  Next: Antisuji moves,  Prev: Semeai,  Up: MG Details
+
+Making or destroying eyes
+-------------------------
+
+   A move which makes a difference in the number of eyes produced from
+an eye space is called an "eye move". It's not necessary that the eye is
+critical for the life and death of the dragon in question, although it
+will be valued substantially higher if this is the case. As usual it's
+important to find all moves that change the eye count.
+
+   (This is part of what eye_finder was doing. Currently it only finds
+one vital point for each unstable eye space.)
+
+
+File: gnugo.info,  Node: Antisuji moves,  Next: Territorial moves,  Prev: Making eyes,  Up: MG Details
+
+Antisuji moves
+--------------
+
+   Moves which are locally inferior or for some other reason must not be
+played are called "antisuji moves". These moves are generated by pattern
+matching. Care must be taken with this move reason as the move under no
+circumstances will be played.
+
+
+File: gnugo.info,  Node: Territorial moves,  Next: Owl attack and defense,  Prev: Antisuji moves,  Up: MG Details
+
+Territorial moves
+-----------------
+
+   Any move that increases territory gets a move reason. These are the
+block territory and expand territory move reasons. Such move reasons
+are added by the `b' and `e' patterns in `patterns/patterns.db'.
+Similarly the `E' patterns attempt to generate or mitigate an moyo,
+which is a region of influence not yet secure territory, yet valuable.
+Such a pattern sets the "expand moyo" move reason.
+
+
+File: gnugo.info,  Node: Owl attack and defense,  Next: Combination Attacks,  Prev: Territorial moves,  Up: MG Details
+
+Attacking and Defending Dragons
+-------------------------------
+
+   Just as the tactical reading code tries to determine when a worm can
+be attacked or defended, the owl code tries to determine when a dragon
+can get two eyes and live. The function `owl_reasons()' generates the
+corresponding move reasons.
+
+   The owl attack and owl defense move reasons are self explanatory.
+
+   The owl attack threat reason is generated if owl attack on an
+opponent's dragon fails but the owl code determines that the dragon can
+be killed with two consecutive moves. The killing moves are stored in
+`dragon[pos].owl_attack_point' and
+`dragon[pos].owl_second_attack_point'.
+
+   Similarly if a friendly dragon is dead but two moves can revive it,
+an owl defense threat move reason is generated.
+
+   The prevent threat reasons are similar but with the colors reversed:
+if the opponent has an attack threat move then a move which removes the
+threat gets a prevent threat move reason.
+
+   The owl uncertain move reasons are generated when the owl code runs
+out of nodes. In order to prevent the owl code from running too long, a
+cap is put on the number of nodes one owl read can generate. If this is
+exceeded, the reading is cut short and the result is cached as usual,
+but marked uncertain.  In this case an owl uncertain move reason may be
+generated.  For example, if the owl code finds the dragon alive but is
+unsure, a move to defend may still be generated.
+
+
+File: gnugo.info,  Node: Combination Attacks,  Prev: Owl attack and defense,  Up: MG Details
+
+Combination Attacks
+-------------------
+
+   The function `atari_atari' tries to find a sequence of ataris
+culminating in an unexpected change of status of any opponent string,
+from `ALIVE' to `CRITICAL'. Once such a sequence of ataris is found, it
+tries to shorten it by rejecting irrelevant moves.
+
+
+File: gnugo.info,  Node: Valuation,  Next: Move Generation Functions,  Prev: MG Details,  Up: Move Generation
+
+Valuation of suggested moves
+============================
+
+   At the end of the move generation process, the function
+`value_move_reasons()' tries to assign values to the moves for the
+purpose of selecting the best move. The single purpose of the move
+valuation is to try to rank the moves so that the best move gets the
+highest score. In principle these values could be arbitrary, but in
+order to make it easier to evaluate how well the valuation performs,
+not to mention simplify the tuning, we try to assign values which are
+consistent with the usual methods of counting used by human Go players,
+as explained for example in _The Endgame_ by Ogawa and Davies.
+
+   Moves are valued with respect to four different criteria. These are
+
+   * territorial value
+
+   * strategical value
+
+   * shape value,
+
+   * secondary value.
+
+   All of these are floats and should be measured in terms of actual
+points.
+
+   The territorial value is the total change of expected territory
+caused by this move. This includes changes in the status of groups if
+the move is an attack or a defense move.
+
+   Beginning with GNU Go 3.0, the influence function plays an important
+role in estimating territory (*note Influence and Territory::). It is
+used to make a guess at each intersection how likely it is that it will
+become black or white territory. The territorial value sums up the
+changes in these valuations.
+
+   Strategical value is a measure of the effect the move has on the
+safety of all groups on the board. Typically cutting and connecting
+moves have their main value here. Also edge extensions, enclosing moves
+and moves towards the center have high strategical value. The
+strategical value should be the sum of a fraction of the territorial
+value of the involved dragons. The fraction is determined by the change
+in safety of the dragon.
+
+   Shape value is a purely local shape analysis. An important role of
+this measure is to offset mistakes made by the estimation of
+territorial values. In open positions it's often worth sacrificing a
+few points of (apparent) immediate profit to make good shape. Shape
+value is implemented by pattern matching, the Shape patterns.
+
+   Secondary value is given for move reasons which by themselves are not
+sufficient to play the move. One example is to reduce the number of
+eyes for a dragon that has several or to attack a defenseless worm.
+
+   When all these values have been computed, they are summed, possibly
+weighted (secondary value should definitely have a small weight), into
+a final move value. This value is used to decide the move.
+
+* Menu:
+
+* Territorial value::		  How much territory does a move gain
+* Strategical value::             Strategical gains from a move
+* Shape factor::		  Local shape
+* Minimum Value::                 Minimum value
+* Secondary Value::               Other, more indirect, gains from a move
+* Threats and Followup Value::    Valuation of attack and defense threats
+
+
+File: gnugo.info,  Node: Territorial value,  Next: Strategical value,  Up: Valuation
+
+Territorial Value
+-----------------
+
+   The algorithm for computing territorial value is in the function
+`estimate_territorial_value'. As the name suggests, it seeks to
+estimate the change in territory.
+
+   It considers all groups that are changed from alive to death or
+vice-versa due to this move. Also, it makes an assumption whether the
+move should be considered safe. If so, the influence module is called:
+The function `influence_delta_territory' estimates the territorial
+effect of both the stone played and of the changes of group status'.
+
+   The result returned by the influence module is subject to a number of
+corrections. This is because some move reasons cannot be evaluated by a
+single call to the influence function, such as moves depending on a ko.
+
+
+File: gnugo.info,  Node: Strategical value,  Next: Shape factor,  Prev: Territorial value,  Up: Valuation
+
+Strategical Value
+-----------------
+
+   Strategical defense or attack reasons are assigned to any move which
+matches a pattern of type `a' or `d'. These are moves which in some
+(often intangible) way tend to help strengthen or weaken a dragon. Of
+course strengthening a dragon which is already alive should not be
+given much value, but when the move reason is generated it is not
+necessary to check its status or safety. This is done later, during the
+valuation phase.
+
+
+File: gnugo.info,  Node: Shape factor,  Next: Minimum Value,  Prev: Strategical value,  Up: Valuation
+
+Shape Factor
+------------
+
+   In the value field of a pattern (*note Pattern Values::) one may
+specify a shape value.
+
+   This is used to compute the shape factor, which multiplies the score
+of a move. We take the largest positive contribution to shape and add 1
+for each additional positive contribution found.  Then we take the
+largest negative contribution to shape, and add 1 for each additional
+negative contribution. The resulting number is raised to the power 1.05
+to obtain the shape factor.
+
+   The rationale behind this complicated scheme is that every shape
+point is very significant. If two shape contributions with values (say)
+5 and 3 are found, the second contribution should be devalued to 1.
+Otherwise the engine is too difficult to tune since finding multiple
+contributions to shape can cause significant overvaluing of a move.
+
+
+File: gnugo.info,  Node: Minimum Value,  Next: Secondary Value,  Prev: Shape factor,  Up: Valuation
+
+Minimum Value
+-------------
+
+   A pattern may assign a minimum (and sometimes also a maximum) value.
+For example the Joseki patterns have values which are prescribed in
+this way, or ones with a `value' field.  One prefers not to use this
+approach but in practice it is sometimes needed.
+
+   In the fuseki, there are often several moves with identical minimum
+value. GNU Go chooses randomly between such moves, which ensures some
+indeterminacy of GNU Go's play. Later in the game, GNU Go's genuine
+valuation of such a move is used as a secondary criterion.
+
+
+File: gnugo.info,  Node: Secondary Value,  Next: Threats and Followup Value,  Prev: Minimum Value,  Up: Valuation
+
+Secondary Value
+---------------
+
+   Secondary move reasons are weighed very slightly. Such a move can
+tip the scales if all other factors are equal.
+
+
+File: gnugo.info,  Node: Threats and Followup Value,  Prev: Secondary Value,  Up: Valuation
+
+Threats and Followup Value
+--------------------------
+
+   Followup value refers to value which may acrue if we get two moves
+in a row in a local area. It is assigned for moves that threaten to
+attack or defend a worm or dragon. Also, since GNU Go 3.2 the influence
+module makes an assessment of the possible purely territorial followup
+moves.  In cases where these two heuristics are not sufficient we add
+patterns with a `followup_value' autohelper macro.
+
+   Usually, the followup value gives only a small contribution; e.g. if
+it the followup value is very large, then GNU Go treats the move as
+sente by doubling its value.  However, if the largest move on the board
+is a ko which we cannot legally take, then such a move becomes
+attractive as a ko threat and the full followup value is taken into
+account.
+
+
+File: gnugo.info,  Node: Move Generation Functions,  Next: Move Valuation Functions,  Prev: Valuation,  Up: Move Generation
+
+Move Generation Functions
+=========================
+
+   The following functions are defined in `move_reasons.c'.
+
+   * `void clear_move_reasons(void)'
+          Initialize move reason data structures.
+
+   * `void add_lunch(int eater, int food)'
+          See if a lunch is already in the list of lunches, otherwise
+          add a new entry. A lunch is in this context a pair of `eater'
+          (a dragon) and `food' (a worm).
+
+   * `void remove_lunch(int eater, int food)'
+          Remove a lunch from the list of lunches.  A lunch is in this
+          context a pair of `eater' (a dragon) and `food' (a worm).
+
+   * `int move_reason_known(int pos, int type, int what)'
+          Check whether a move reason already is recorded for a move.
+          Negative value for `what' means only match `type'.
+
+   * `int attack_move_reason_known(int pos, int what)'
+          Check whether an attack move reason already is recorded for a
+          move.  Negative value for `what' means only match `type'.
+
+   * `int defense_move_reason_known(int pos, int what)'
+          Check whether a defense move reason already is recorded for a
+          move.  Negative value for `what' means only match `type'.
+
+   * `int owl_defense_move_reason_known(int pos, int what)'
+          Check whether an owl defense move reason already is recorded
+          for a move.  Negative value for `what' means only match
+          `type'.
+
+   * `void add_attack_move(int pos, int ww, int code)'
+          Add to the reasons for the move at `pos' that it attacks the
+          worm at `ww'.
+
+   * `void add_defense_move(int pos, int ww, int code)'
+          Add to the reasons for the move at `pos' that it defends the
+          worm at `ww'.
+
+   * `void add_attack_threat_move(int pos, int ww, int code)'
+          Add to the reasons for the move at `pos' that it threatens to
+          attack the worm at `ww'.
+
+   * `void remove_attack_threat_move(int pos, int ww)'
+          Remove an attack threat move reason.
+
+   * `void add_defense_threat_move(int pos, int ww, int code)'
+          Add to the reasons for the move at `pos' that it defends the
+          worm at `ww'.
+
+   * `int get_attack_threats(int pos, int max_strings, int strings[])'
+          Report all, or up to max_strings, strings that are threatened
+          at `pos'.
+
+   * `int get_defense_threats(int pos, int max_strings, int strings[])'
+          Report all, or up to max_strings, strings that might be
+          defended at `pos'.
+
+   * `int get_biggest_owl_target(int pos)'
+          Report the biggest dragon that is owl-affected (possibily
+          with ko) by a move at `pos'.
+
+   * `void add_connection_move(int pos, int dr1, int dr2)'
+          Add to the reasons for the move at `pos' that it connects the
+          dragons at `dr1' and `dr2'. Require that the dragons are
+          distinct.
+
+   * `void add_cut_move(int pos, int dr1, int dr2)'
+          Add to the reasons for the move at `pos' that it cuts the
+          dragons at `dr1' and `dr2'. Require that the dragons are
+          distinct.
+
+   * `void add_antisuji_move(int pos)'
+          Add to the reasons for the move at (pos that it is an
+          anti-suji.  This means that it is a locally inferior move, or
+          for some other reason, must *not* be played.
+
+   * `void add_semeai_move(int pos, int dr)'
+          Add to the reasons for the move at `pos' that it wins the
+          dragon (friendly or not) at `dr' in semeai. Since it is
+          possible that in some semeai one player can kill but the
+          other can only make seki, it is possible that one dragon is
+          already alive in seki. Therefore separate move reasons must
+          be added for the two dragons.
+
+   * `void add_semeai_threat(int pos, int dr)'
+          Add to the reasons for the move at `pos' that given two moves
+          in a row a move here can win the dragon (friendly or not) at
+          `dr' in semeai. Such a move can be used as a ko threat, and
+          it is also given some value due to uncertainty in the
+          counting of liberties.
+
+   * `void add_vital_eye_move(int pos, int eyespace, int color)'
+          Add to the reasons for the move at `pos' that its the vital
+          point for the eye space at `eyespace' of `color'.
+
+   * `void add_either_move(int pos, int reason1, int target1, int
+     reason2, int target2)'
+          Add to the reasons for the move at `pos' that it will
+          accomplish one of two things: either `reason1' on `target1' or
+          `reason2' on `target2'. At this time, `reason' can only be
+          `ATTACK_STRING'. More reasons will be implemented in the
+          future.
+
+   * `void add_all_move(int pos, int reason1, int target1, int reason2,
+     int target2)'
+          Add to the reasons for the move at `pos' that it will
+          accomplish both of two things: `reason1' on `target1' and
+          `reason2' on `target2'. At this time, `reason' can only be
+          `DEFEND_STRING'.  More reasons will be implemented in the
+          future.
+
+   * `void add_block_territory_move(int pos)'
+          Add to the reasons for the move at `pos' that it secures
+          territory by blocking.
+
+   * `void add_block_territory_move(int pos)'
+          Add to the reasons for the move at `pos' that it secures
+          territory by blocking.
+
+   * `void add_expand_territory_move(int pos)'
+          Add to the reasons for the move at `pos' that it expands
+          territory.
+
+   * `void add_expand_moyo_move(int pos) '
+          Add to the reasons for the move at `pos' that it expands moyo.
+
+   * `void add_shape_value(int pos, float value)'
+          This function is called when a shape value for the move at
+          `pos' is found. We keep track of the largest positive shape
+          value found, and the total number of positive contributions,
+          as well as the largest negative shape value found, and the
+          total number of negative shape contributions.
+
+   * `void add_worthwhile_threat_move(int pos)'
+          Flag that this move is worthwhile to play as a pure threat
+          move.
+
+   * `float compute_shape_factor(int pos) '
+          This function computes the shape factor, which multiplies the
+          score of a move. We take the largest positive contribution to
+          shape and add 1 for each additional positive contribution
+          found. Then we take the largest negative contribution to
+          shape, and add 1 for each additional negative contribution.
+          The resulting number is raised to the power 1.05. The
+          rationale behind this complicated scheme is that every shape
+          point is very significant. If two shape contributions with
+          values (say) 5 and 3 are found, the second contribution
+          should be devalued to 1. Otherwise the engine is too
+          difficult to tune since finding multiple contributions to
+          shape can cause significant overvaluing of a move.
+
+   * `void add_strategical_attack_move(int pos, int dr)'
+          Add to the reasons for the move at `pos' that it attacks the
+          dragon `dr' on a strategical level.
+
+   * `void add_strategical_defense_move(int pos, int dr)'
+          Add to the reasons for the move at `pos' that it defends the
+          dragon `dr' on a strategical level.
+
+   * `void add_owl_attack_move(int pos, int dr, int code)'
+          Add to the reasons for the move at `pos' that the owl code
+          reports an attack on the dragon `dr'.
+
+   * `void add_owl_defense_move(int pos, int dr, int code)'
+          Add to the reasons for the move at `pos' that the owl code
+          reports a defense of the dragon `dr'.
+
+   * `void add_owl_attack_threat_move(int pos, int dr, int code)'
+          Add to the reasons for the move at `pos' that the owl code
+          reports a move threatening to attack the dragon enemy `dr'.
+          That is, if the attacker is given two moves in a row, `pos'
+          can be the first move.
+
+   * `void add_owl_uncertain_defense_move(int pos, int dr)'
+          The owl code found the friendly dragon alive, or the
+          unfriendly dragon dead, and an extra point of attack or
+          defense was found, so this might be a good place to play.
+
+   * `void add_owl_uncertain_attack_move(int pos, int dr)'
+          The owl code found the opponent dragon alive, or the friendly
+          dragon dead, but was uncertain, and this move reason propose
+          an attack or defense which is expected to fail but might
+          succeed.
+
+   * `void add_owl_defense_threat_move(int pos, int dr, int code)'
+          Add to the reasons for the move at `pos' that the owl code
+          reports a move threatening to rescue the dragon `dr'.  That
+          is, if the defender is given two moves in a row, `pos' can be
+          the first move.
+
+   * `void add_my_atari_atari_move(int pos, int size)'
+          Add to the reasons for the move at `pos' that it captures at
+          least one of a set of worms which individually are tactically
+          safe (such as a double atari). Only one such move reason is
+          permitted per move.
+
+   * `void add_your_atari_atari_move(int pos, int size)'
+          Add to the reasons for the move at `pos' that it stops a
+          combination attack for the opponent.
+
+   * `void add_owl_prevent_threat_move(int pos, int dr) '
+          Add to the reasons for the move at `pos' that the owl code
+          reports a move threatening to defend the dragon enemy `dr',
+          and that `pos' is a move which attacks the dragon.  That is,
+          if the defender is given two moves in a row, `pos' can be the
+          first move. Hopefully playing at `pos' makes it harder for
+          the dragon to live.
+
+   * `void add_followup_value(int pos, float value)'
+          Add value of followup moves.
+
+   * `void add_reverse_followup_value(int pos, float value)'
+          Add value of inverse followup moves.
+
+   * `int set_minimum_move_value(int pos, float value)'
+          Set a minimum allowed value for the move.
+
+   * `void set_minimum_territorial_value(int pos, float value)'
+          Set a minimum allowed territorial value for the move.
+
+   * `void set_maximum_territorial_value(int pos, float value)'
+          Set a maximum allowed territorial value for the move.
+
+   * `void add_replacement_move(int from, int to)'
+          Add a point redistribution rule, sending the points from
+          `from' to `to'.
+
+   * `void get_saved_worms(int pos, int saved[BOARDMAX])'
+          Find worms rescued by a move at `pos'.
+
+   * `void get_saved_dragons(int pos, int saved[BOARDMAX])'
+          Find dragons rescued by a move at `pos'.
+
+   * `void list_move_reasons(int color)'
+          List the move reasons for `color'.
+
+   * `void discard_redundant_move_reasons(int pos)'
+          This function checks the list of move reasons for redundant
+          move reasons and marks them accordingly in their status field.
+
+   * `int is_antisuji_move(int pos)'
+          Look through the move reasons to see whether `pos' is an
+          antisuji move.
+
+   * `int move_connects_strings(int pos, int color)'
+          Count how many distinct strings are (solidly) connected by
+          the move at `pos'. Add a bonus for strings with few
+          liberties. Also add bonus for opponent strings put in atari
+          or removed.
+
+   * `int move_reasons_confirm_safety(int move, int color, int minsize)'
+          Find saved dragons and worms, then call `confirm_safety()'.
+
+
+File: gnugo.info,  Node: Move Valuation Functions,  Next: End Game,  Prev: Move Generation Functions,  Up: Move Generation
+
+Move Valuation Functions
+========================
+
+   The file `value_moves.c' contains the function `int
+review_move_reasons(int *the_move, float *val, int color, float
+pure_threat_value, float score)' which assigns values to all the moves.
+The parameter pure_threat_value is the value assigned to a move which
+only threatens to capture or kill something. The reason for playing
+these is that the move may be effective because we have misevaluated
+the dangers or because the opponent misplays.
+
+   Apart from this function, the functions in this file are declared
+static. However they are so important that we document many of them
+here.
+
+   * `static void find_more_attack_and_defense_moves(int color)'
+          Test all moves which defend, attack, connect or cut to see if
+          they also attack or defend some other worm.
+
+   * `static void find_more_owl_attack_and_defense_moves(int color)'
+          Test certain moves to see whether they (too) can owl attack or
+          defend an owl critical dragon. Tested moves are
+            1. Strategical attacks or defenses for the dragon.
+
+            2. Vital eye points for the dragon.
+
+            3. Tactical attacks or defenses for a part of the dragon.
+
+            4. Moves connecting the dragon to something else.
+
+   * `static int strategically_sound_defense(int aa, int tt)'
+          It's often bad to run away with a worm that is in a
+          strategically weak position. This function gives heuristics
+          for determining whether a move at `tt' to defend the worm
+          `aa' is strategically sound.
+
+   * `static void induce_secondary_move_reasons(int color)'
+          Any move that captures or defends a worm also connects or cuts
+          the surrounding dragons. Find these secondary move reasons.
+          We also let an owl attack count as a strategical defense of
+          our neighbors of the owl attacked dragon. We only do this for
+          tactically safe dragons, however, because otherwise the
+          effects of capturing has already been taken into account
+          elsewhere.
+
+   * `static void examine_move_safety(int color)'
+          Examine the strategical and tactical safety of the moves.
+          This is used to decide whether or not the stone should
+          generate influence when the move is evaluated. The idea is to
+          avoid overestimating the value of strategically unsafe
+          defense moves and connections of dead dragons. This sets the
+          move.move_safety field.
+
+   * `static float dragon_safety(int dr, int ignore_dead_dragons)'
+          An attempt to estimate the safety of a dragon. Safety values
+          are:
+             - DEAD
+
+             - ALIVE
+
+             - CRITICAL
+
+             - INESSENTIAL
+
+             - TACTICALLY DEAD
+
+             - WEAK
+
+             - WEAKLY ALIVE
+
+             - SEKI
+
+             - STRONGLY ALIVE
+
+             - INVINCIBLE
+
+             - INSUBSTANTIAL
+
+   * `static float connection_value(int dragona, int dragonb, int tt,
+     float margin)'
+          Strategical value of connecting (or cutting) the dragon at
+          `dragona' to the dragon at `dragonb'. Notice that this
+          function is assymetric.  This is because `connection_value(a,
+          b)' is intended to measure the strategical value on the a
+          dragon from a connection to the b dragon.  The parameter
+          `margin' is the margin by which we are ahead.  If this
+          exceeds 20 points we use the cautious impact values which
+          value connections more.  This is because we can afford to
+          waste a move making sure of safety. If the margin is between
+          0 and 20 points we interpret linearly between the two sets of
+          impact values. (See `value_moves.c' for more information.)
+
+   * `static float adjusted_worm_attack_value(int pos, int ww)'
+          Usually the value of attacking a worm is twice its effective
+          size, but when evaluating certain move reasons we need to
+          adjust this to take effects on neighbors into account, e.g.
+          for an `ATTACK_EITHER' move reason. This does not apply to
+          the attack and defense move reasons, however, because then
+          the neighbors already have separate attack or defense move
+          reasons (if such apply).  If the worm has an adjacent
+          (friendly) dead dragon we add its value. At least one of the
+          surrounding dragons must be alive.  If not, the worm must
+          produce an eye of sufficient size, and that should't be
+          accounted for here.  As a guess, we suppose that a critical
+          dragon is alive for our purpose here.  On the other hand if
+          it has an adjacent critical worm, and if `pos' does not
+          defend that worm, we subtract the value of the worm, since
+          `pos' may be defended by attacking that worm. We make at most
+          one adjustment of each type.
+
+   * `static void estimate_territorial_value(int pos, int color, float
+     score)'
+          Estimate the direct territorial value of a move at `pos'.
+
+   * `static void estimate_strategical_value(int pos, int color, float
+     score)'
+          Estimate the strategical value of a move at `pos'.
+
+   * `static int compare_move_reasons(const void *p1, const void *p2)'
+          Compare two move reasons, used for sorting before
+          presentation.
+
+   * `static float value_move_reasons(int pos, int color, float
+     pure_threat_value, float score)'
+          Combine the reasons for a move at `pos' into a simple
+          numerical value.
+
+   * `static void value_moves(int color, float pure_threat_value, float
+     score)'
+          Loop over all possible moves and value the move reasons for
+          each.
+
+   * `static void print_top_moves(void)'
+          Search through all board positions for the 10 highest valued
+          moves and print them.
+
+   * `static void reevaluate_ko_threats(int ko_move, int color)'
+          This function is called if the biggest move on board was an
+          illegal ko capture.
+
+   * `static void redistribute_points(void)'
+          Redistribute points. When one move is declared a replacement
+          for another by a replacement move reason, the move values for
+          the inferior move are transferred to the replacement.
+
+
+File: gnugo.info,  Node: End Game,  Prev: Move Valuation Functions,  Up: Move Generation
+
+End Game
+========
+
+   Endgame moves are generated just like any other move by GNU Go. In
+fact, the concept of endgame does not exist explicitly, but if the
+largest move initially found is worth 6 points or less, an extra set of
+patterns in `endgame.db' is matched and the move valuation is redone.
+
+
+File: gnugo.info,  Node: Worms and Dragons,  Next: Eyes,  Prev: Move Generation,  Up: Top
+
+Worms and Dragons
+*****************
+
+* Menu:
+
+* Worms::                             Worms
+* Amalgamation::                      How two Worms are amalgamated.
+* Connection::                        Connections.
+* Half Eyes::                         Half Eyes and False Eyes.
+* Dragons::                           Union of WORMS.
+* Dragons in Color::                  Colored display of DRAGONS.
+* Worm and Dragon Functions::         Worm and Dragon Functions.
+
+   Before considering its move, GNU Go collects some data in several
+arrays. Two of these arrays, called `worm' and `dragon', are discussed
+in this document. Others are discussed in *Note Eyes::.
+
+   This information is intended to help evaluate the connectedness, eye
+shape, escape potential and life status of each group.
+
+   Later routines called by `genmove()' will then have access to this
+information. This document attempts to explain the philosophy and
+algorithms of this preliminary analysis, which is carried out by the
+two routines `make_worm()' and `make_dragon()' in `dragon.c'.
+
+   A "worm" is a maximal set of vertices on the board which are
+connected along the horizontal and vertical lines, and are of the same
+color, which can be `BLACK', `WHITE' or `EMPTY'. The term `EMPTY'
+applied to a worm means that the worm consists of empty (unoccupied)
+vertices. It does *not* mean that that the worm is the empty set. A
+"string" is a nonempty worm. An empty worm is called a "cavity".  If a
+subset of vertices is contained in a worm, there is a unique worm
+containing it; this is its "worm closure".
+
+   A "dragon" is a union of strings of the same color which will be
+treated as a unit. The dragons are generated anew at each move. If two
+strings are in the dragon, it is the computer's working hypothesis that
+they will live or die together and are effectively connected.
+
+   The purpose of the dragon code is to allow the computer to formulate
+meaningful statements about life and death.  To give one example,
+consider the following situation:
+
+           OOOOO
+          OOXXXOO
+          OX...XO
+          OXXXXXO
+           OOOOO
+
+   The X's here should be considered a single group with one three-space
+eye, but they consist of two separate strings.  Thus we must amalgamate
+these two strings into a single dragon. Then the assertion makes sense,
+that playing at the center will kill or save the dragon, and is a vital
+point for both players. It would be difficult to formulate this
+statement if the X's are not perceived as a unit.
+
+   The present implementation of the dragon code involves simplifying
+assumptions which can be refined in later implementations.
+

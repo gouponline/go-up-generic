@@ -1,0 +1,215 @@
+This is gnugo.info, produced by makeinfo version 4.2 from gnugo.texi.
+
+INFO-DIR-SECTION GNU games
+START-INFO-DIR-ENTRY
+* GNU Go: (gnugo).          The GNU Go program
+END-INFO-DIR-ENTRY
+
+
+Indirect:
+gnugo.info-1: 186
+gnugo.info-2: 49910
+gnugo.info-3: 99196
+gnugo.info-4: 148965
+gnugo.info-5: 198666
+gnugo.info-6: 248421
+gnugo.info-7: 297782
+gnugo.info-8: 344274
+gnugo.info-9: 392563
+gnugo.info-10: 441793
+gnugo.info-11: 490894
+gnugo.info-12: 540370
+
+Tag Table:
+(Indirect)
+Node: Top186
+Node: Introduction2289
+Node: About2847
+Node: Copyright4815
+Node: Authors6317
+Node: Thanks7020
+Node: TODO8340
+Node: Installation19035
+Node: GNU/Linux and Unix19615
+Node: Configure Options21291
+Node: Ram Cache21757
+Node: Default Level23152
+Node: DFA Option23965
+Node: Other Options24472
+Node: Windows and MS-DOS27766
+Node: DJGPP29665
+Node: Cygwin30652
+Node: MinGW3231845
+Node: VC32650
+Node: Macintosh35352
+Node: User Guide35554
+Node: Documentation36150
+Node: CGoban37860
+Node: Other Clients39627
+Node: Ascii42892
+Node: Emacs43775
+Node: GMP and GTP48283
+Node: Tournaments49303
+Node: SGF Support49910
+Node: Invoking GNU Go50247
+Node: Overview70614
+Node: Examining the Position71868
+Node: Move Generators74889
+Node: Move Valuation79179
+Node: Detailed Sequence of Events80096
+Node: Roadmap83700
+Node: Coding Styles95456
+Node: Navigating the Source98408
+Node: Analyzing99196
+Node: Traces100178
+Node: Output File101125
+Node: Decide string102175
+Node: Decide dragon105269
+Node: GTP and GDB techniques105702
+Node: Debugboard106437
+Node: Scoring106944
+Node: Colored Display107301
+Node: Move Generation110544
+Node: Move generation Intro110910
+Node: Move Reasons112624
+Node: Move Reason Details115316
+Node: Attack and Defense116120
+Node: Threats to Attack or Defend117566
+Node: Multi Attack or Defense118259
+Node: Cutting and Connecting118631
+Node: Semeai119608
+Node: Making eyes120388
+Node: Antisuji moves121005
+Node: Territorial moves121400
+Node: Owl attack and defense121925
+Node: Combination Attacks123500
+Node: Valuation123905
+Node: Territorial value126947
+Node: Strategical value127802
+Node: Shape factor128381
+Node: Minimum Value129333
+Node: Secondary Value129993
+Node: Threats and Followup Value130260
+Node: End Game131166
+Node: Worms and Dragons131542
+Node: Worms133874
+Node: Amalgamation143644
+Node: Connection145335
+Node: Half Eyes147176
+Node: Dragons148965
+Node: Dragons in Color160020
+Node: Eyes161494
+Node: Local Games162281
+Node: Eye Space163640
+Node: Eye Space as Local Game165720
+Node: Eye Example168546
+Node: Graphs169307
+Node: Eye Shape171191
+Node: Eye Local Game Values172173
+Node: Eye Topology175777
+Node: Eye Topology with Ko177890
+Node: False Margins183875
+Node: Eye Functions184476
+Node: Patterns193651
+Node: Patterns Overview194947
+Node: Pattern Classification198666
+Node: Pattern Values204052
+Node: Helper Functions205025
+Node: Autohelpers and Constraints207949
+Node: Autohelper Actions210409
+Node: Autohelper Functions212839
+Node: Attack and Defense DB224163
+Node: Connections Database225477
+Node: Connection Functions227779
+Node: Tuning229797
+Node: PM Implementation237835
+Node: Symmetry & transformations239210
+Node: Details241091
+Node: Grid optimization243314
+Node: Joseki Compiler244837
+Node: Ladders in Joseki248421
+Node: Corner Matcher250359
+Node: Editing Patterns255351
+Node: DFA256645
+Node: Introduction to the DFA257856
+Node: What is a DFA259774
+Node: Pattern matching with DFA264448
+Node: Building the DFA267043
+Node: Incremental Algorithm269368
+Node: DFA Optimizations270546
+Node: Tactical Reading271016
+Node: Reading Basics272145
+Ref: Return Codes274430
+Ref: Experimental Owl Extension275058
+Ref: depthparams275575
+Node: Hashing279132
+Node: Hash Calculation280651
+Node: Hash Organization282170
+Node: Hash Structures284773
+Node: Persistent Cache288023
+Node: Ko291524
+Node: A Ko Example295721
+Node: Another Ko Example297782
+Node: Alternate Komaster Schemes299385
+Node: Superstrings301105
+Node: Debugging302442
+Node: Connection Reading307008
+Node: Pattern Based Reading308234
+Node: The Owl Code309682
+Node: Combinations314674
+Node: Influence317708
+Node: Influential Concepts318669
+Node: Territory and Moyo320847
+Node: Influence Usage322176
+Node: Influence and Territory325050
+Node: Territorial Details330928
+Node: The Influence Core332910
+Node: The Influence Algorithm336107
+Node: Permeability339276
+Node: Escape340818
+Node: Break Ins344274
+Node: Surrounded Dragons348733
+Node: Influential Patterns352150
+Node: Influential Display356546
+Node: Influence Tuning360090
+Node: Alternative Moyo362815
+Node: Moyo history363645
+Node: Bouzy365037
+Node: Libboard368539
+Node: Board Data Structures370341
+Node: The Board Array371768
+Node: Incremental Board376971
+Node: Some Board Functions384629
+Node: SGF389266
+Node: API392563
+Node: Getting Started396555
+Node: Basic Data Structures397543
+Node: The Board State398678
+Node: Positional Functions400144
+Node: Utility Functions406678
+Node: General Utilities407174
+Node: Print Utilities423085
+Node: Board Utilities426638
+Node: Influence Utilities437719
+Node: GTP440175
+Node: The Go Text Protocol440639
+Node: Running in GTP mode441793
+Node: GTP applications443686
+Node: The Metamachine446010
+Node: Adding new GTP commands449782
+Node: GTP command reference453733
+Node: Regression488559
+Node: Regression Testing490092
+Node: Test Suites490894
+Node: Running the Regressions493024
+Node: Running regress.pike495805
+Node: Viewing with Emacs497802
+Node: HTML Views498551
+Node: Copying500879
+Node: GPL501335
+Node: GFDL520518
+Node: GTP License540370
+Node: Concept Index542072
+Node: Functions Index560186
+
+End Tag Table

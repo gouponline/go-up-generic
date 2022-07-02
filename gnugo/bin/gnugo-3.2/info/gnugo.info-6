@@ -1,0 +1,1247 @@
+This is gnugo.info, produced by makeinfo version 4.0b from gnugo.texi.
+
+INFO-DIR-SECTION GNU games
+START-INFO-DIR-ENTRY
+* GNU go: (gnugo).          The GNU Go program
+END-INFO-DIR-ENTRY
+
+
+File: gnugo.info,  Node: Eye Topology with Ko,  Next: False Margins,  Prev: Eye Topology,  Up: Eyes
+
+Eye Topology with Ko
+====================
+
+   This section extends the topological eye analysis to handle ko. We
+distinguish between a ko in favor of `O'' and one in favor of `X':
+
+     .?O?   good for O
+     OO.O
+     O.O?
+     XOX.
+     .X..
+     .?O?   good for X
+     OO.O
+     OXO?
+     X.X.
+     .X..
+
+   Preliminarily we give the former the symbolic diagonal value `a' and
+the latter the diagonal value `b'. We should clearly have `0 < a < 1 <
+b < 2'. Letting `e' be the topological eye value (still the sum of the
+four diagonal values), we want to have the following properties:
+
+     e <= 2     - proper eye
+     2 < e < 3  - worse than proper eye, better than half eye
+     e = 3      - half eye
+     3 < e < 4  - worse than half eye, better than false eye
+     e >= 4     - false eye
+
+   In order to determine the appropriate values of `a' and `b' we
+analyze the typical cases of ko contingent topological eyes:
+
+           .X..      (slightly) better than proper eye
+     (a)   ..OO          e < 2
+           OO.O
+           O.OO      e = 1 + a
+           XOX.
+           .X..
+     
+           .X..      better than half eye, worse than proper eye
+     (a')  ..OO      2 < e < 3
+           OO.O
+           OXOO      e = 1 + b
+           X.X.
+           .X..
+     
+           .X..      better than half eye, worse than proper eye
+     (b)   .XOO      2 < e < 3
+           OO.O
+           O.OO      e = 2 + a
+           XOX.
+           .X..
+     
+           .X..      better than false eye, worse than half eye
+     (b')  .XOO      3 < e < 4
+           OO.O
+           OXOO      e = 2 + b
+           X.X.
+           .X..
+     
+           .X..
+           XOX.      (slightly) better than proper eye
+     (c)   O.OO          e < 2
+           OO.O
+           O.OO      e = 2a
+           XOX.
+           .X..
+     
+           .X..
+           XOX.      proper eye, some aji
+     (c')  O.OO      e ~ 2
+           OO.O
+           OXOO      e = a + b
+           X.X.
+           .X..
+     
+           .X..
+           X.X.      better than half eye, worse than proper eye
+     (c'') OXOO      2 < e < 3
+           OO.O
+           OXOO      e = 2b
+           X.X.
+           .X..
+     
+           .X...
+           XOX..     better than half eye, worse than proper eye
+     (d)   O.O.X     2 < e < 3
+           OO.O.
+           O.OO.     e = 1 + 2a
+           XOX..
+           .X...
+     
+           .X...
+           XOX..     half eye, some aji
+     (d')  O.O.X     e ~ 3
+           OO.O.
+           OXOO.     e = 1 + a + b
+           X.X..
+           .X...
+     
+           .X...
+           X.X..     better than false eye, worse than half eye
+     (d'') OXO.X     3 < e < 4
+           OO.O.
+           OXOO.     e = 1 + 2b
+           X.X..
+           .X...
+     
+           .X...
+           XOX..     better than false eye, worse than half eye
+     (e)   O.OXX     3 < e < 4
+           OO.O.
+           O.OO.     e =  2 + 2a
+           XOX..
+           .X...
+     
+           .X...
+           XOX..     false eye, some aji
+     (e')  O.OXX     e ~ 4
+           OO.O.
+           OXOO.     e = 2 + a + b
+           X.X..
+           .X...
+     
+           .X...
+           X.X..     (slightly) worse than false eye
+     (e'') OXOXX     4 < e
+           OO.O.
+           OXOO.     e = 2 + 2b
+           X.X..
+           .X...
+
+   It may seem obvious that we should use
+     (i)   a=1/2, b=3/2
+   but this turns out to have some drawbacks. These can be solved by
+using either of
+     (ii)  a=2/3, b=4/3
+     (iii) a=3/4, b=5/4
+     (iv)  a=4/5, b=6/5
+
+   Summarizing the analysis above we have the following table for the
+four different choices of `a' and `b'.
+
+     case    symbolic        a=1/2   a=2/3   a=3/4   a=4/5   desired
+             value           b=3/2   b=4/3   b=5/4   b=6/5   interval
+     (a)     1+a             1.5     1.67    1.75    1.8         e < 2
+     (a')    1+b             2.5     2.33    2.25    2.2     2 < e < 3
+     (b)     2+a             2.5     2.67    2.75    2.8     2 < e < 3
+     (b')    2+b             3.5     3.33    3.25    3.2     3 < e < 4
+     (c)     2a              1       1.33    1.5     1.6         e < 2
+     (c')    a+b             2       2       2       2           e ~ 2
+     (c'')   2b              3       2.67    2.5     2.4     2 < e < 3
+     (d)     1+2a            2       2.33    2.5     2.6     2 < e < 3
+     (d')    1+a+b           3       3       3       3           e ~ 3
+     (d'')   1+2b            4       3.67    3.5     3.4     3 < e < 4
+     (e)     2+2a            3       3.33    3.5     3.6     3 < e < 4
+     (e')    2+a+b           4       4       4       4           e ~ 4
+     (e'')   2+2b            5       4.67    4.5     4.4     4 < e
+
+   We can notice that (i) fails for the cases (c"), (d), (d"), and (e).
+The other three choices get all values in the correct intervals. The
+main distinction between them is the relative ordering of (c") and (d)
+(or analogously (d") and (e)). If we do a more detailed analysis of
+these we can see that in both cases `O' can secure the eye
+unconditionally if he moves first while `X' can falsify it with ko if
+he moves first. The difference is that in (c"), `X' has to make the
+first ko threat, while in (d), O has to make the first ko threat.  Thus
+(c") is better for O and ought to have a smaller topological eye value
+than (d). This gives an indication that (iv) is the better choice.
+
+   We can notice that any value of `a', `b' satisfying `a+b=2' and
+`3/4<a<1' would have the same qualities as choice (iv) according to the
+analysis above. One interesting choice is `a=7/8, b=9/8' since these
+allow exact computations with floating point values having a binary
+mantissa. The latter property is shared by `a=3/4' and `a=1/2'.
+
+   When there are three kos around the same eyespace, things become
+more complex. This case is, however, rare enough that we ignore it.
+
+
+File: gnugo.info,  Node: False Margins,  Next: Eye Functions,  Prev: Eye Topology with Ko,  Up: Eyes
+
+False Margins
+=============
+
+   The following situation is rare but special enough to warrant
+separate attention:
+
+        OOOOXX
+        OXaX..
+        ------
+
+   Here `a' may be characterized by the fact that it is adjacent to O's
+eyespace, and it is also adjacent to an X group which cannot be
+attacked, but that an X move at 'a' results in a string with only one
+liberty. We call this a "false margin".
+
+   For the purpose of the eye code, O's eyespace should be parsed as
+`(X)', not `(X!)'.
+
+
+File: gnugo.info,  Node: Eye Functions,  Prev: False Margins,  Up: Eyes
+
+Functions in `optics.c'
+=======================
+
+   Here are the public functions in `optics.c', except some simple
+access functions used by autohelpers. The statically declared functions
+are documented in the source code.
+
+   * `void make_domains(struct eye_data b_eye[BOARDMAX], struct
+     eye_data w_eye[BOARDMAX], int owl_call)'
+          This function is called from `make_dragons()' and from
+          `owl_determine_life()'. It marks the black and white domains
+          (eyeshape regions) and collects some statistics about each
+          one.
+
+   * `void compute_eyes(int pos, int *max, int *min, int *attack_point,
+     int *defense_point, struct eye_data eye[BOARDMAX], struct
+     half_eye_data heye[BOARDMAX], int add_moves, int color)'
+          Given an eyespace with origin `pos', this function computes
+          the minimum and maximum numbers of eyes the space can yield.
+          If max and min are different, then vital points of attack and
+          defense are also generated.
+
+   * `void compute_eyes_pessimistic(int pos, int *max, int *min, int
+     *pessimistic_min, int *attack_point, int *defense_point, struct
+     eye_data eye[BOARDMAX], struct half_eye_data heye[BOARDMAX])'
+          This function works like `compute_eyes()', except that it
+          also gives a pessimistic view of the chances to make eyes.
+
+   * `void propagate_eye(int origin, struct eye_data eye[BOARDMAX])'
+          Copies the data at `origin' to the rest of the eye (invariant
+          fields only).
+
+   * `static int recognize_eye(int pos, int *attack_point, int
+     *defense_point, int *max, int *min, struct eye_data eye[BOARDMAX],
+     struct half_eye_data heye[BOARDMAX], int add_moves, int color)'
+          Declared static but documented here because of its
+          importance. The life code supplies an alternative version of
+          this function called `recognize_eye2()'.  Here `pos' is the
+          origin of an eyespace. Returns 1 if there is a pattern in
+          `eyes.db' matching the eyespace, or 0 if no match is found.
+          If there is a key point for attack, `*attack_point' is set to
+          its location, or `NO_MOVE' if there is none.  Similarly
+          `*defense_point' is the location of a vital defense point.
+          `*min' and `*max' are the minimum and maximum number of eyes
+          that can be made in this eyespace respectively. Vital
+          attack/defense points exist if and only if `*min != *max'. If
+          `add_moves==1', this function may add a move_reason for
+          `color' at a vital point which is found by the function. If
+          `add_moves==0', set `color==EMPTY'.
+
+   * `void add_false_eye(int pos, struct eye_data eye[BOARDMAX], struct
+     half_eye_data heye[BOARDMAX])'
+          This function turns a proper eyespace into a margin.
+
+   * `float topological_eye(int pos, int color, struct eye_data
+     b_eye[BOARDMAX], struct eye_data w_eye[BOARDMAX], struct
+     half_eye_data heye[BOARDMAX])'
+          See *Note Eye Topology::. Evaluate the eye space at `pos'
+          topologically (*note Eye Topology::). Returns 2 or less if
+          `pos' is a proper eye for `color'; between 2 and 3 if the eye
+          can be made false only by ko; 3 if `pos' is a half eye;
+          between 3 and 4 if the eye can be made real only by ko; 4 if
+          `pos' is a false eye. Attack and defense points for control
+          of the diagonals are stored in the `heye[]' array.
+
+
+
+File: gnugo.info,  Node: Patterns,  Next: DFA,  Prev: Eyes,  Up: Top
+
+The Pattern Code
+****************
+
+* Menu:
+
+* Patterns Overview::             Overview of the pattern database.
+* Pattern Classification::        The classification field
+* Pattern Values::                The value field
+* Helper Functions::              Helper Functions
+* Autohelpers and Constraints::   Automatic generation of helper functions.
+* Autohelper Actions::            Autohelper Actions
+* Autohelper Functions::          Autohelper Functions
+* Attack and Defense DB::         The Attack and defense moves database.
+* Connections Database::          The connection database.
+* Connection Functions::          Functions in `connections.c'
+* Tuning::                        Tuning the pattern database.
+* PM Implementation::             Implementation.
+* Symmetry & transformations::    Symmetry and transformations.
+* Details::                       Details of implementation.
+* grid optimization::             The ``grid'' optimization.
+* Joseki Compiler::               The joseki compiler.
+* Ladders in Joseki::             Example: ladders in joseki.
+
+
+File: gnugo.info,  Node: Patterns Overview,  Next: Pattern Classification,  Prev: Patterns,  Up: Patterns
+
+Overview
+========
+
+   Several pattern databases are in the patterns directory.  This
+chapter primarily discusses the patterns in `patterns.db',
+`patterns2.db', and the pattern files `hoshi.db' etc.  which are
+compiled from the SGF files `hoshi.sgf' (*note Joseki Compiler::).
+There is no essential difference between these files, except that the
+ones in `patterns.db' and `patterns2.db' are hand written. They are
+concatenated before being compiled by `mkpat' into `patterns.c'. The
+purpose of the separate file `patterns2.db' is that it is handy to move
+patterns into a new directory in the course of organizing them. The
+patterns in `patterns.db' are more disorganized, and are slowly being
+moved to `patterns2.db'.
+
+   During the execution of `genmove()', the patterns are matched in
+`shapes.c' in order to find move reasons.
+
+   The same basic pattern format is used by `attack.db', `defense.db',
+`conn.db', `apats.db' and `dpats.db'.  However these patterns are used
+for different purposes. These databases are discussed in other parts of
+this documentation. The patterns in `eyes.db' are entirely different
+and are documented elsewhere (*note Eyes::).
+
+   The patterns described in the databases are ascii representations, of
+the form:
+
+   Pattern EB112
+
+
+       ?X?.?       jump under
+       O.*oo
+       O....
+       o....
+       -----
+     
+       :8,ed,NULL
+
+   Here `O' marks a friendly stone, `X' marks an enemy stone, `.' marks
+an empty vertex, `*' marks O's next move, `o' marks a square either
+containing `O' or empty but not `X'. (The symbol `x', which does not
+appear in this pattern, means `X' or `.'.) Finally `?' Indicates a
+location where we don't care what is there, except that it cannot be
+off the edge of the board.
+
+   The line of `-''s along the bottom in this example is the edge of the
+board itself--this is an edge pattern. Corners can also be indicated.
+Elements are not generated for `?' markers, but they are not completely
+ignored - see below.
+
+   The line beginning `:' describes various attributes of the pattern,
+such as its symmetry and its class. Optionally, a function called a
+"helper" can be provided to assist the matcher in deciding whether to
+accept move. Most patterns do not require a helper, and this field is
+filled with NULL.
+
+   The matcher in `matchpat.c' searches the board for places where this
+layout appears on the board, and the callback function
+`shapes_callback()' in `shapes.c' registers the appropriate move
+reasons.
+
+   After the pattern, there is some supplementary information in the
+format:
+
+       :trfno, classification, [values], helper_function
+
+   Here trfno represents the number of transformations of the pattern to
+consider, usually `8' (no symmetry, for historical reasons), or one of
+`|', `\', `/', `-', `+', `X', where the line represents the axis of
+symmetry. (E.g. `|' means symmetrical about a vertical axis.)
+
+   The above pattern could equally well be written on the left edge:
+
+
+       |oOO?
+       |...X
+       |..*?
+       |..o.
+       |..o?
+     
+       :8,ed,NULL
+
+   The program `mkpat' is capable of parsing patterns written this way,
+or for that matter, on the top or right edges, or in any of the four
+corners. As a matter of convention all the edge patterns in
+`patterns.db' are written on the bottom edge or in the lower left
+corners. In the `patterns/' directory there is a program called
+`transpat' which can rotate or otherwise transpose patterns.  This
+program is not built by default--if you think you need it, `make
+transpat' in the `patterns/' directory and consult the usage remarks at
+the beginning of `patterns/transpat.c'.
+
+
+File: gnugo.info,  Node: Pattern Classification,  Next: Pattern Values,  Prev: Patterns Overview,  Up: Patterns
+
+Pattern Attributes
+==================
+
+   The attribute field in the `:' line of a pattern consists of a
+sequence of zero or more of the following characters, each with a
+different meaning. The attributes may be roughly classified as
+"constraints", which determine whether or not the pattern is matched,
+and "actions", which describe what is to be done when the pattern is
+matched, typically to add a move reason.
+
+Constraint Pattern Attributes
+-----------------------------
+
+   * `s'
+          Safety of the move is not checked.  This is appropriate for
+          sacrifice patterns. If this classification is omitted, the
+          matcher requires that the stone played cannot be trivially
+          captured. Even with s classification, a check for legality is
+          made, though.
+
+   * `n'
+          In addition to usual check that the stone played cannot be
+          trivially captured, it is also confirmed that an opponent
+          move here could not be captured.
+
+   * `O'
+          It is checked that every friendly (`O') stone of the pattern
+          belongs to a dragon which has matcher_status (*note
+          Dragons::) `ALIVE' or `UNKNOWN'. The `CRITICAL' matcher
+          status is excluded. It is possible for a string to have
+          `ALIVE' matcher_status and still be tactically critical,
+          since it might be amalgamated into an ALIVE dragon, and the
+          matcher status is constant on the dragon.  Therefore, an
+          additional test is performed: if the pattern contains a
+          string which is tactically critical, and if `*' does not
+          rescue it, the pattern is rejected.
+
+   * `o'
+          It is checked that every friendly (`O') stone of the pattern
+          belongs to a dragon which is classified as `DEAD' or
+          `UNKNOWN'.
+
+   * `X'
+          It is checked that every opponent (`X') stone of the pattern
+          belongs to a dragon with matcher_status `ALIVE', `UNKNOWN' or
+          `CRITICAL'. Note that there is an asymmetry with `O'
+          patterns, where `CRITICAL' dragons are rejected.
+
+   * `x'
+          It is checked that every opponent (`X') stone of the pattern
+          belongs to a dragon which is classified as `DEAD' or `UNKNOWN'
+
+Action Attributes
+-----------------
+
+   * `C'
+          If two or more distinct O dragons occur in the pattern, the
+          move is given the move reasons that it connects each pair of
+          dragons. An exception is made for dragons where the underlying
+          worm can be tactically captured and is not defended by the
+          considered move.
+
+   * `c'
+          Add strategical defense move reason for all our dragons and a
+          small shape bonus. This classification is appropriate for
+          weak connection patterns.
+
+   * `B'
+          If two or more distinct `X' dragons occur in the pattern, the
+          move is given the move reasons that it cuts each pair of
+          dragons.
+
+   * `b'
+          The move secures territory by blocking it from intrusion.
+
+   * `e'
+          The move makes territory by expanding, e.g. along the edge.
+
+   * `E'
+          The move attempts increase influence and create/expand a moyo.
+
+   * `d'
+          The move strategically defends all O dragons in the pattern,
+          except those that can be tactically captured and are not
+          tactically defended by this move. If any O dragon should
+          happen to be perfectly safe already, this only reflects in
+          the move reason being valued to zero.
+
+   * `a'
+          The move strategically attacks all `X' dragons in the pattern.
+
+   * `J'
+          Standard joseki move. Unless there is an urgent move on the
+          board these moves are made as soon as they can be.  This is
+          equivalent to adding the `d' and `a' classifications together
+          with a minimum accepted value of 27.
+
+   * `F'
+          This indicates a fuseki pattern. This is only effective
+          together with either the `j' or `t' classification, and is
+          used to ensure indeterministic play during fuseki.
+
+   * `j'
+          Slightly less urgent joseki move. These moves will be made
+          after those with the `J' classification. This adds the `e'
+          and `E' classifications. If the move has the `F'
+          classification, it also gets a fixed value of 20.1, otherwise
+          it gets a minimum accepted value of 20. (This makes sure that
+          GNU Go chooses randomly between different moves that have
+          `jF' as classification.)
+
+   * `t'
+          Minor joseki move (tenuki OK). This is equivalent to adding
+          the `e' and `E' classifications together with either a fixed
+          value of 15.07 (if the move has `F' classification) or a
+          minimum value of 15 (otherwise).
+
+   * `U'
+          Urgent joseki move (never tenuki). This is equivalent to the
+          `d' and `a' classifications together with a shape bonus of 15
+          and a minimum accepted value of 40.
+
+   A commonly used class is `OX' (which rejects pattern if either side
+has dead stones). The string `-' may be used as a placeholder. (In fact
+any characters other than the above and `,' are ignored.)
+
+   The types `o' and `O' could conceivably appear in a class, meaning it
+applies only to `UNKNOWN'. `X' and `x' could similarly be used together.
+All classes can be combined arbitrarily.
+
+
+File: gnugo.info,  Node: Pattern Values,  Next: Helper Functions,  Prev: Pattern Classification,  Up: Patterns
+
+Pattern Attributes
+==================
+
+   The second and following fields in the `:' line of a pattern are
+optional and of the form `value1(x),value2(y),...'. The available set
+of values are as follows.
+
+   * `terri(x)'
+          Forces the territorial value of the move to be at least x.
+
+   * `minterri(x)'
+          Forces the territorial value of the move to be at least x.
+
+   * `maxterri(x)'
+          Forces the territorial value of the move to be at most x.
+
+   * `value(x)'
+          Forces the final value of the move to be at least x.
+
+   * `minvalue(x)', `maxvalue(x)'
+          Forces the final value of the move to be at least/most x.
+
+   * `shape(x)'
+          Adds x to the move's shape value.
+
+   * `followup(x)'
+          Adds x to the move's followup value.
+
+   The meaning of these values is documented in *Note Move Generation::.
+
+
+File: gnugo.info,  Node: Helper Functions,  Next: Autohelpers and Constraints,  Prev: Pattern Values,  Up: Patterns
+
+Helper Functions
+================
+
+   Helper functions can be provided to assist the matcher in deciding
+whether to accept a pattern, register move reasons, and setting various
+move values. The helper is supplied with the compiled pattern entry in
+the table, and the (absolute) position on the board of the `*' point.
+
+   One difficulty is that the helper must be able to cope with all the
+possible transformations of the pattern. To help with this, the OFFSET
+macro is used to transform relative pattern coordinates to absolute
+board locations.
+
+   The actual helper functions are in `helpers.c'. They are declared in
+`patterns.h'.
+
+   As an example to show how to write a helper function, we consider a
+hypothetical helper called `wedge_helper'. Such a helper used to exist,
+but has been replaced by a constraint. Due to its simplicity it's still
+a good example. The helper begins with a comment:
+
+     /*
+     
+     ?O.           ?Ob
+     .X*           aX*
+     ?O.           ?Oc
+     
+     :8,C,wedge_helper
+     */
+
+   The image on the left is the actual pattern. On the right we've taken
+this image and added letters to label `apos', `bpos', and `cpos'. The
+position of *, the point where GNU Go will move if the pattern is
+adopted, is passed through the parameter `move'.
+
+     int
+     wedge_helper(ARGS)
+     {
+       int apos, bpos, cpos;
+       int other = OTHER_COLOR(color);
+       int success = 0;
+     
+       apos = OFFSET(0, -2);
+       bpos = OFFSET(-1, 0);
+       cpos = OFFSET(1, 0);
+     
+       if (TRYMOVE(move, color)) {
+         if (TRYMOVE(apos, other)) {
+           if (board[apos] == EMPTY || attack(apos, NULL))
+             success = 1;
+           else if (TRYMOVE(bpos, color)) {
+             if (!safe_move(cpos, other))
+               success = 1;
+             popgo();
+           }
+           popgo();
+         }
+         popgo();
+       }
+     
+       return success;
+     }
+
+   The `OFFSET' lines tell GNU Go the positions of the three stones at
+`a', `b', and `c'. To decide whether the pattern guarantees a
+connection, we do some reading. First we use the `TRYMOVE' macro to
+place an `O' at `move' and let `X' draw back to `a'. Then we ask
+whether `O' can capture these stones by calling `attack()'. The test if
+there is a stone at `a' before calling `attack()' is in this position
+not really necessary but it's good practice to do so, because if the
+attacked stone should happen to already have been captured while
+placing stones, GNU Go would crash with an assertion failure.
+
+   If this attack fails we let `O' connect at `b' and use the
+`safe_move()' function to examine whether a cut by `X' at `c' could be
+immediately captured. Before we return the result we need to remove the
+stones we placed from the reading stack. This is done with the function
+`popgo()'.
+
+
+File: gnugo.info,  Node: Autohelpers and Constraints,  Next: Autohelper Actions,  Prev: Helper Functions,  Up: Patterns
+
+Autohelpers and Constraints
+===========================
+
+   In addition to the hand-written helper functions in `helpers.c', GNU
+Go can automatically generate helper functions from a diagram with
+labels and an expression describing a constraint. The constraint
+diagram, specifying the labels, is placed below the `:' line and the
+constraint expression is placed below the diagram on line starting with
+a `;'.  Constraints can only be used to accept or reject a pattern. If
+the constraint evaluates to zero (false) the pattern is rejected,
+otherwise it's accepted (still conditioned on passing all other tests
+of course). To give a simple example we consider a connection pattern.
+
+
+     Pattern Conn311
+     
+     O*.
+     ?XO
+     
+     :8,C,NULL
+     
+     O*a
+     ?BO
+     
+     ;oplay_attack_either(*,a,a,B)
+
+   Here we have given the label `a' to the empty spot to the right of
+the considered move and the label `B' to the `X' stone in the pattern.
+In addition to these, `*' can also be used as a label. A label may be
+any lowercase or uppercase ascii letter except `OoXxt'. By convention
+we use uppercase letters for `X' stones and lowercase for `O' stones
+and empty intersections. When labeling a stone that's part of a larger
+string in the pattern, all stones of the string should be marked with
+the label. (These conventions are not enforced by the pattern compiler,
+but to make the database consistent and easy to read they should be
+followed.)
+
+   The labels can now be used in the constraint expression. In this
+example we have a reading constraint which should be interpreted as
+"Play an `O' stone at `*' followed by an `X' stone at `a'. Accept the
+pattern if `O' now can capture either at `a' or at `B' (or both
+strings)."
+
+   The functions that are available for use in the constraints are
+listed in the section `Autohelpers Functions' below. Technically the
+constraint expression is transformed by mkpat into an automatically
+generated helper function in `patterns.c'. The functions in the
+constraint are replaced by C expressions, often functions calls. In
+principle any valid C code can be used in the constraints, but there is
+in practice no reason to use anything more than boolean and arithmetic
+operators in addition to the autohelper functions.  Constraints can
+span multiple lines, which are then concatenated.
+
+
+File: gnugo.info,  Node: Autohelper Actions,  Next: Autohelper Functions,  Prev: Autohelpers and Constraints,  Up: Patterns
+
+Autohelper Actions
+==================
+
+   As a complement to the constraints, which only can accept or reject a
+pattern, one can also specify an action to perform when the pattern has
+passed all tests and finally has been accepted.
+
+   Example:
+
+
+     Pattern EJ4
+     
+     ...*.     continuation
+     .OOX.
+     ..XOX
+     .....
+     -----
+     
+     :8,Ed,NULL
+     
+     ...*.     never play a here
+     .OOX.
+     .aXOX
+     .....
+     -----
+     
+     >antisuji(a)
+
+   The line starting with `>' is the action line. In this case it tells
+the move generation that the move at a should not be considered,
+whatever move reasons are found by other patterns. The action line uses
+the labels from the constraint diagram. Both constraint and action can
+be used in the same pattern. If the action only needs to refer to `*',
+no constraint diagram is required. Like constraints, actions can span
+multiple lines.
+
+
+File: gnugo.info,  Node: Autohelper Functions,  Next: Attack and Defense DB,  Prev: Autohelper Actions,  Up: Patterns
+
+Autohelper Functions
+====================
+
+   The autohelper functions are translated into C code by the program in
+`mkpat.c'. To see exactly how the functions are implemented, consult
+the autohelper function definitions in that file. Autohelper functions
+can be used in both constraint and action lines.
+
+
+     `lib(x)'
+     `lib2(x)'
+     `lib3(x)'
+     `lib4(x)'
+
+   Number of first, second, third, and fourth order liberties of a worm
+respectively. *Note Worms and Dragons::, the documentation on worms for
+definitions.
+
+
+     `xlib(x)'
+     `olib(x)'
+
+   The number of liberties that an enemy or own stone, respectively,
+would obtain if played at the empty intersection `x'.
+
+     `xcut(x)'
+     `ocut(x)'
+
+   Calls `cut_possible' (*note General Utilities::) to determine
+whether `X' or `O' can cut at the empty intersection `x'.
+
+     `ko(x)'
+
+   True if `x' is either a stone or an empty point involved in a ko
+position.
+
+     `status(x)'
+
+   The matcher status of a dragon. status(x) returns an integer that
+can have the values `ALIVE', `UNKNOWN', `CRITICAL', or `DEAD' (*note
+Worms and Dragons::).
+
+     `alive(x)'
+     `unknown(x)'
+     `critical(x)'
+     `dead(x)'
+
+   Each function true if the dragon has the corresponding matcher
+status and false otherwise (*note Worms and Dragons::).
+
+     `status(x)'
+
+   Returns the status of the dragon at `x' (*note Worms and Dragons::).
+
+     `genus(x)'
+
+   The number of eyes of a dragon. It is only meaningful to compare this
+value against 0, 1, or 2.
+
+
+     `xarea(x)'
+     `oarea(x)'
+     `xmoyo(x)'
+     `omoyo(x)'
+     `xterri(x)'
+     `oterri(x)'
+
+   Functions related to various kinds of influence and territory
+estimations, as described in *Note Moyo::. xarea(x) evaluates to true if
+x is either a living enemy stone or an empty point within his "area".
+`oarea(x)' is analogous but with respect to our stones and area.   The
+main difference between area, moyo, and terri is that area is a very
+far reaching kind of influence, moyo gives a more realistic estimate of
+what may turn in to territory, and terri gives the points that already
+are believed to be secure territory.
+
+     `weak(x)'
+
+   True for a dragon that is perceived as weak.
+
+
+     `attack(x)'
+     `defend(x)'
+
+   Results of tactical reading. `attack(x)' is true if the worm can be
+captured, `defend(x)' is true if there also is a defending move. Please
+notice that `defend(x)' will return false if there is no attack on the
+worm.
+
+
+     `safe_xmove(x)'
+     `safe_omove(x)'
+
+   True if an enemy or friendly stone, respectively, can safely be
+played at `x'. By safe it is understood that the move is legal and that
+it cannot be captured right away.
+
+
+     `legal_xmove(x)'
+     `legal_omove(x)'
+
+   True if an enemy or friendly stone, respectively, can legally be
+played at x.
+
+
+     o_somewhere(x,y,z, ...)
+     x_somewhere(x,y,z, ...)
+
+   True if O (respectively X) has a stone at one of the labelled
+vertices.  In the diagram, these vertices should be marked with a `?'.
+
+
+     odefend_against(x,y)
+     xdefend_against(x,y)
+
+   True if an own stone at `x' would stop the enemy from safely playing
+at `y', and conversely for the second function.
+
+
+     `does_defend(x,y)'
+     `does_attack(x,y)'
+
+   True if a move at `x' defends/attacks the worm at `y'. For defense a
+move of the same color as `y' is tried and for attack a move of the
+opposite color.
+
+
+     `xplay_defend(a,b,c,...,z)'
+     `oplay_defend(a,b,c,...,z)'
+     `xplay_attack(a,b,c,...,z)'
+     `oplay_attack(a,b,c,...,z)'
+
+   These functions make it possible to do more complex reading
+experiments in the constraints. All of them work so that first the
+sequence of moves `a',`b',`c',... is played through with alternating
+colors, starting with `X' or `O' as indicated by the name. Then it is
+tested whether the worm at `z' can be attacked or defended,
+respectively. It doesn't matter who would be in turn to move, a worm of
+either color may be attacked or defended. For attacks the opposite
+color of the string being attacked starts moving and for defense the
+same color starts. The defend functions return true if the worm cannot
+be attacked in the position or if it can be attacked but also defended.
+The attack functions return true if there is a way to capture the
+worm, whether or not it can also be defended. If there is no stone
+present at `z' after the moves have been played, it is assumed that an
+attack has already been successful or a defense has already failed.  If
+some of the moves should happen to be illegal, typically because it
+would have been suicide, the following moves are played as if nothing
+has happened and the attack or defense is tested as usual. It is assumed
+that this convention will give the relevant result without requiring a
+lot of special cases.
+
+   The special label `?' can be used to represent a tenuki.  Thus
+`oplay_defend(a,?,b,c)' tries moves by `O' at `a' and `b', as if `X'
+plays the second move in another part of the board, then asks if `c'
+can be defended. The tenuki cannot be the first move of the sequence,
+nor does it need to be: instead of `oplay_defend(?,a,b,c)' you can use
+`xplay_defend(a,b,c)'.
+
+     `xplay_defend_both(a,b,c,...,y,z)'
+     `oplay_defend_both(a,b,c,...,y,z)'
+     `xplay_attack_either(a,b,c,...,y,z)'
+     `oplay_attack_either(a,b,c,...,y,z)'
+
+   These functions are similar to the previous ones. The difference is
+that the last *two* arguments denote worms to be attacked or defended
+simultaneously. Obviously `y' and `z' must have the same color. If
+either location is empty, it is assumed that an attack has been
+successful or a defense has failed. The typical use for these functions
+is in cutting patterns, where it usually suffices to capture either
+cutstone.
+
+   The function `xplay_defend_both' plays alternate moves beginning
+with an `X' at `a'. Then it passes the last two arguments to
+`defend_both' in `engine/utils.c'. This function checks to determine
+whether the two strings can be simultaneously defended.
+
+   The function `xplay_attack_either' plays alternate moves beginning
+with an `X' move at `a'. Then it passes the last two arguments to
+`attack_either' in `engine/utils.c'. This function looks for a move
+which captures at least one of the two strings. In its current
+implementation `attack_either' only looks for uncoordinated attacks and
+would thus miss a double atari.
+
+
+     `xplay_break_through(a,b,c,...,x,y,z)'
+     `oplay_break_through(a,b,c,...,x,y,z)'
+
+   These functions are used to set up a position like
+
+
+     .O.    .y.
+     OXO    xXz
+
+and `X' aims at capturing at least one of `x', `y', and `z'. If this
+succeeds `1' is returned. If it doesn't, `X' tries instead to cut
+through on either side and if this succeeds, `2' is returned. Of course
+the same shape with opposite colors can also be used.
+
+   Important notice: `x', `y', and `z' must be given in the order they
+have in the diagram above, or any reflection and/or rotation of it.
+
+     seki_helper(x)
+
+   Checks whether the string at `x' can attack any surrounding string.
+If so, return false as the move to create a seki (probably) wouldn't
+work.
+
+     threaten_to_save(x)
+
+   Calls `add_followup_value' to add as a move reason a conservative
+estimate of the value of saving the string `x' by capturing one opponent
+stone.
+
+     area_stone(x)
+
+   Returns the number of stones in the area around `x'.
+
+     area_space(x)
+
+   Returns the amount of space in the area around `x'.
+
+     `eye(x)'
+     `proper_eye(x)'
+     `marginal_eye(x)'
+
+   True if `x' is an eye space for either color, a non-marginal eye
+space for either color, or a marginal eye space for either color,
+respectively.
+
+     `antisuji(x)'
+
+   Tell the move generation that `x' is a substandard move that never
+should be played.
+
+     same_dragon(x,y)
+     same_worm(x,y)
+
+   Return true if `x' and `y' are the same dragon or worm respectively.
+
+     `dragonsize(x)'
+     `wormsize(x)'
+
+   Number of stones in the indicated dragon or worm.
+
+     `add_connect_move(x,y)'
+     `add_cut_move(x,y)'
+     `add_attack_either_move(x,y)'
+     `add_defend_both_move(x,y)'
+
+   Explicitly notify the move generation about move reasons for the move
+in the pattern.
+
+     `halfeye(x)'
+
+   Returns true if the empty intersection at `x' is a half eye.
+
+     `remove_attack(x)'
+
+   Inform the tactical reading that a supposed attack does in fact not
+work.
+
+     `potential_cutstone(x)'
+
+   True if `cutstone2' field from worm data is larger than one. This
+indicates that saving the worm would introduce at least two new cutting
+points.
+
+     `not_lunch(x,y)'
+
+   Prevents the misreporting of `x' as lunch for `y'.  For example, the
+following pattern tells GNU Go that even though the stone at `a' can be
+captured, it should not be considered "lunch" for the dragon at `b',
+because capturing it does not produce an eye:
+
+     XO|          ba|
+     O*|          O*|
+     oo|          oo|
+     ?o|          ?o|
+     
+     > not_lunch(a,b)
+
+     `vital_chain(x)'
+
+   Calls `vital_chain' to determine whether capturing the stone at `x'
+will result in one eye for an adjacent dragon. The current
+implementation just checks that the stone is not a singleton on the
+first line.
+
+     `amalgamate(x,y)'
+
+   Amalgamate (join) the dragons at `x' and `y' (*note Worms and
+Dragons::).
+
+     `amalgamate_most_valuable(x,y,z)'
+
+   Called when `x', `y', `z' point to three (preferably distinct)
+dragons, in situations such as this:
+
+
+     .O.X
+     X*OX
+     .O.X
+
+   In this situation, the opponent can play at `*', preventing the
+three dragons from becoming connected. However `O' can decide which cut
+to allow. The helper amalgamates the dragon at `y' with either `x' or
+`z', whichever is largest.
+
+     make_proper_eye(x)
+
+   This autohelper should be called when `x' is an eyespace which is
+misidentified as marginal. It is reclassified as a proper eyespace
+(*note Eye Space::).
+
+     remove_halfeye(x)
+
+   Remove a half eye from the eyespace. This helper should not be run
+after `make_dragons' is finished, since by that time the eyespaces have
+already been analyzed.
+
+     remove_eyepoint(x)
+
+   Remove an eye point. This function can only be used before the
+segmentation into eyespaces.
+
+     `owl_topological_eye(x,y)'
+
+   Here `x' is an empty intersection which may be an eye or half eye
+for some dragon, and `y' is a stone of the dragon, used only to
+determine the color of the eyespace in question. Returns the sum of the
+values of the diagonal intersections, relative to `x', as explained in
+*Note Eye Topology::, equal to 4 or more if the eye at `x' is false, 3
+if it is a half eye, and 2 if it is a true eye.
+
+     `owl_escape_value(x)'
+
+   Returns the escape value at `x'. This is only useful in owl attack
+and defense patterns.
+
+
+File: gnugo.info,  Node: Attack and Defense DB,  Next: Connections Database,  Prev: Autohelper Functions,  Up: Patterns
+
+Attack and Defense Database
+===========================
+
+   The patterns in `attack.db' and `defense.db' are used to assist the
+tactical reading in finding moves that attacks or defends worms. The
+matching is performed during `make_worms()', at the time when the
+tactical status of all worms is decided. None of the classes described
+above are useful in these databases, instead we have two other classes.
+
+`D'
+     For each `O' worm in the pattern that can be tactically captured
+     (`worm[m][n].attack_code != 0'), the move at `*' is tried. If it
+     is found to defend the stone, this is registered as a reason for
+     the move `*' and the defense point of the worm is set to `*'.
+
+`A'
+     For each `X' worm in the pattern, it's tested whether the move at
+     `*' captures the worm. If that is the case, this is registered as
+     a reason for the move at `*'. The attack point of the worm is set
+     to `*' and if it wasn't attacked before, a defense is searched for.
+
+   Furthermore, `A' patterns can only be used in `attack.db' and `D'
+patterns only in `defense.db'. Unclassified patterns may appear in
+these databases, but then they must work through actions to be
+effective.
+
+
+File: gnugo.info,  Node: Connections Database,  Next: Connection Functions,  Prev: Attack and Defense DB,  Up: Patterns
+
+The Connections Database
+========================
+
+   The patterns in `conn.db' are used for helping `make_dragons()'
+amalgamate worms into dragons and to some extent for modifying eye
+spaces.  The patterns in this database use the classifications `B',
+`C', and `e'. `B' patterns are used for finding cutting points, where
+amalgamation should not be performed, `C' patterns are used for finding
+existing connections, over which amalgamation is to be done, and `e'
+patterns are used for modifying eye spaces and reevaluating lunches.
+There are also some patterns without classification, which use action
+lines to have an impact. These are matched together with the `C'
+patterns. Further details and examples can be found in *Note Worms and
+Dragons::.
+
+   We will illustrate these databases by example. In this situation:
+
+     XOO
+     O.O
+     ...
+
+`X' cannot play safely at the cutting point, so the `O' dragons are to
+be amalgamated. Two patterns are matched here:
+
+     Pattern CC204
+     
+     O
+     .
+     O
+     
+     :+,C
+     
+     O
+     A
+     O
+     
+     ;!safe_xmove(A) && !ko(A) && !xcut(A)
+     
+     Pattern CC205
+     
+     XO
+     O.
+     
+     :\,C
+     
+     AO
+     OB
+     
+     ;attack(A) || (!safe_xmove(B) && !ko(B) && !xcut(B))
+
+   The constraints are mostly clear. For example the second pattern
+should not be matched if the `X' stone cannot be attacked and `X' can
+play safely at `B', or if `B' is a ko. The constraint `!xcut(B)' means
+that connection has not previously been inhibited by `find_cuts'. For
+example consider this situation:
+
+
+     OOXX
+     O.OX
+     X..O
+     X.OO
+
+The previous pattern is matched here twice, yet `X' can push in and
+break one of the connections. To fix this, we include a pattern:
+
+     Pattern CB11
+     
+     ?OX?
+     O!OX
+     ?*!O
+     ??O?
+     
+     :8,B
+     
+     ?OA?
+     OaOB
+     ?*bO
+     ??O?
+     
+     ; !attack(A) && !attack(B) && !xplay_attack(*,a,b,*) && !xplay_attack(*,b,a,*)
+
+   After this pattern is found, the `xcut' autohelper macro will return
+true at any of the points `*', `a' and `b'. Thus the patterns `CB204'
+and `CB205' will not be matched, and the dragons will not be
+amalgamated.
+
+
+File: gnugo.info,  Node: Connection Functions,  Next: Tuning,  Prev: Connections Database,  Up: Patterns
+
+Connections Functions
+=====================
+
+   Here are the public functions in `connections.c'.
+
+   * `static void cut_connect_callback(int m, int n, int color,
+     struct pattern *pattern, int ll, void *data)'
+          Try to match all (permutations of) connection patterns at
+          `(m,n)'.  For each match, if it is a B pattern, set cutting
+          point in worm data structure and make eye space marginal for
+          the connection inhibiting entries of the pattern. If it is a
+          `C' pattern, amalgamate the dragons in the pattern.
+
+   * `void find_cuts(void)'
+          Find cutting points which should inhibit amalgamations and
+          sever the adjacent eye space. This goes through the
+          connection database consulting only patterns of type B. When
+          such a function is found, the function `cut_connect_callback'
+          is invoked.
+
+   * `void find_connections(void)'
+          Find explicit connection patterns and amalgamate the involved
+          dragons.  This goes through the connection database
+          consulting patterns except those of type B, E or e. When such
+          a function is found, the function `cut_connect_callback' is
+          invoked.
+
+   * void modify_eye_spaces1(void)
+          Find explicit connection patterns and amalgamate the involved
+          dragons.  This goes through the connection database
+          consulting only patterns of type E (*note Connections
+          Database::). When such a function is found, the function
+          `cut_connect_callback' is invoked.
+
+   * void modify_eye_spaces1(void)
+          Find explicit connection patterns and amalgamate the involved
+          dragons.  This goes through the connection database
+          consulting only patterns of type e (*note Connections
+          Database::). When such a function is found, the function
+          `cut_connect_callback' is invoked.
+

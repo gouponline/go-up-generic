@@ -1,0 +1,1228 @@
+This is gnugo.info, produced by makeinfo version 4.0b from gnugo.texi.
+
+INFO-DIR-SECTION GNU games
+START-INFO-DIR-ENTRY
+* GNU go: (gnugo).          The GNU Go program
+END-INFO-DIR-ENTRY
+
+
+File: gnugo.info,  Node: Invoking GNU Go,  Prev: SGF Support,  Up: User Guide
+
+Invoking GNU Go: Command line options
+=====================================
+
+Some basic options
+------------------
+
+   * `--help', `-h'
+          Print a help message describing the options. This will also
+          tell you the defaults of various parameters, most importantly
+          the level and cache size. The default values of these
+          parameters can be set before compiling by `configure'.  If
+          you forget the defaults you can find out using `--help'.
+
+   * `--boardsize SIZE'
+          Set the board size
+
+   * `--komi NUM'
+          Set the komi
+
+   * `--level LEVEL'
+          GNU Go can play with different strengths and speeds. Level 10
+          is the default. Decreasing the level will make GNU Go faster
+          but less accurate in its reading.
+
+   * `--quiet', `--silent'
+          Don't print copyright and other messages. Messages
+          specifically requested by other command line options, such as
+          `--trace', are not supressed.
+
+   * `-l', `--infile FILENAME'
+          Load the named SGF file. GNU Go will generate a move for the
+          player who is about to move. If you want to override this and
+          generate a move for the other player you may add the option
+          `color <COLOR>' where <COLOR> is `black' or `white'.
+
+   * `--orientation N'
+          Combine with `-l'. The Go board can be oriented in 8 different
+          ways, counting reflections and rotations of the position;
+          this option selects an orientation (default 0). The parameter
+          `n' is an integer between 0 and 7.
+
+   * `-L', `--until MOVE'
+          Stop loading just before the indicated move is played. MOVE
+          can be either the move number or location.
+
+   * `-o', `--outfile FILENAME'
+          Write sgf output to file
+
+   * `--mode MODE'
+          Force the playing mode ('ascii', 'emacs,' 'gmp' or 'gtp').
+          The default is ASCII, but if no terminal is detected GMP (Go
+          Modem Protocol) will be assumed. In practice this is usually
+          what you want, so you may never need this option.
+
+Other general options:
+----------------------
+
+   * `-M', `--cache-size MEGS'
+          Memory in megabytes used for caching of read results. The
+          default size is 8 unless you configure gnugo with the command
+          `configure --enable-cache-size=SIZE' before compiling to make
+          SIZE the default (*note Installation::). GNU Go stores
+          results of its reading calculations in a Hash table (*note
+          Hashing::). If the Hash table is filled, it is emptied and
+          the reading continues, but some reading may have to be
+          repeated that was done earlier, so a larger cache size will
+          make GNU Go run faster, provided the cache is not so large
+          that swapping occurs. Swapping may be detected on GNU/Linux
+          machines using the program `top'. However, if you have ample
+          memory or if performance seems to be a problem you may want
+          to increase the size of the cache using this option.
+
+   * `--chinese-rules'
+          Use Chinese rules. This means that the Chinese or Area
+          Counting is followed. It may affect the score of the game by
+          one point in even games, more if there is a handicap (since
+          in Chinese Counting the handicap stones count for Black).
+
+   * `--japanese-rules'
+          Use Japanese Rules. This is the default unless you specify
+          `--enable-chinese-rules' as a configure option.
+
+   * `--copyright': Display the copyright notice
+
+   * `--version' or `-v': Print the version number
+
+   * `--printsgf FILENAME':
+          Create an SGF file containing a diagram of the board. Useful
+          with `-L' to create diagrams from games.
+
+   * `--options'
+          Print which experimental configure options were compiled into
+          the program (*note Experimental Options::).
+
+Other options affecting strength and speed
+------------------------------------------
+
+   * `--level AMOUNT'
+          The higher the level, the deeper GNU Go reads. Level 10 is
+          the default.  If GNU Go plays too slowly on your machine, you
+          may want to decrease it.
+
+   This single parameter `--level' is the best way of choosing whether
+to play stronger or faster. It controls a host of other parameters
+which may themselves be set individually at the command line.  The
+default values of these parameters may be found by running `gnugo
+--help'.
+
+   Unless you are working on the program you probably don't need these
+options. Instead, just adjust the single variable `--level'. The
+remaining options are of use to developers tuning the program for
+performance and accuracy.
+
+   * `-D', `--depth DEPTH'
+          Deep reading cutoff. When reading beyond this depth (default
+          16) GNU Go assumes that any string which can obtain 3
+          liberties is alive. Thus GNU Go can read ladders to an
+          arbitrary depth, but will miss other types of capturing moves.
+
+   * `--branch-depth'
+          This sets the `branch_depth', typically a little below the
+          `depth'. Between `branch_depth' and `depth', attacks on
+          strings with 3 liberties are considered but branching is
+          inhibited, so fewer variations are considered.
+
+   * `-B', `--backfill-depth DEPTH'
+          Deep reading cutoff. Beyond this depth (default 12) GNU Go
+          will no longer try backfilling moves in its reading.
+
+   * `--backfill2-depth DEPTH'
+          Another depth controlling how deeply GNU Go looks for
+          backfilling moves. The moves tried below `backfill2_depth'
+          are generally more obscure and time intensive than those
+          controlled by `backfill_depth', so this parameter has a lower
+          default.
+
+   * `-F', `--fourlib-depth DEPTH'
+          Deep reading cutoff. When reading beyond this depth (default
+          7) GNU Go assumes that any string which can obtain 4
+          liberties is alive.
+
+   * `-K', `--ko-depth DEPTH'
+          Deep reading cutoff. Beyond this depth (default 8) GNU Go no
+          longer tries very hard to analyze kos.
+
+   * `--branch-depth DEPTH'
+          Deep reading cutoff. Below this depth (default 8), GNU Go
+          still tries to attack strings with only 3 liberties, but only
+          tries one move at each node.
+
+   * `--aa_depth DEPTH'
+          The reading function `atari_atari' looks for combinations
+          beginning with a series of ataris, and culminating with some
+          string having an unexpected change in status (e.g. alive to
+          dead or critical). This command line optio sets the parameter
+          `aa_depth' which determines how deeply this function looks
+          for combinations.
+
+   * `--superstring-depth'
+          A superstring (*note Superstrings::) is an amalgamation of
+          tightly strings. Sometimes the best way to attack or defend a
+          string is by attacking or defending an element of the
+          superstring.  Such tactics are tried below
+          `superstring_depth' and this command line option allows this
+          parameter to be set.
+
+   The preceeding options are documented with the reading code (*note
+Reading Basics::).
+
+   * `--owl-branch' Below this depth Owl only considers one move.
+     Default 8.
+
+   * `--owl-reading' Below this depth Owl assumes the dragon has
+     escaped.  Default 20.
+
+   * `--owl-node-limit'
+          If the number of variations exceeds this limit, Owl assumes
+          the dragon can make life. Default 1000.  We caution the user
+          that increasing `owl_node_limit' does not necessarily
+          increase the strength of the program.
+
+Ascii Mode Options
+------------------
+
+   * `--color COLOR'
+          Choose your color ('black' or 'white').
+
+   * `--handicap NUMBER'
+          Choose the number of handicap stones (0-9)
+
+Development options:
+--------------------
+
+   * `--replay COLOR'
+          Replay all moves in a game for either or both colors. If used
+          with the `-o' option the game record is annotated with move
+          values. This option requires `-l FILENAME'. The color can be:
+             * white: replay white moves only
+
+             * black: replay black moves only
+
+             * both: replay all moves
+          When the move found by genmove differs from the move in the
+          sgf file the values of both moves are reported thus:
+               Move 13 (white): GNU Go plays C6 (20.60) - Game move F4 (20.60)
+
+          This option is useful if one wants to confirm that a change
+          such as a speedup or other optimization has not affected the
+          behavior of the engine. Note that when several moves have the
+          same top value (or nearly equal) the move generated is not
+          deterministic (though it can be made deterministic by
+          starting with the same random seed). Thus a few deviations
+          from the move in the sgf file are to be expected. Only if the
+          two reported values differ should we conclude that the engine
+          plays differently from the engine which generated the sgf
+          file.  *Note Regression::.
+
+   * `-a', `--allpats'
+          Test all patterns, even those smaller in value than the
+          largest move found so far. This should never affect GNU Go's
+          final move, and it will make it run slower. However this can
+          be very useful when "tuning" GNU Go. It causes both the
+          traces and the output file (`-o') to be more informative.
+
+   * `-T', `--printboard': colored display of dragons.
+          Use rxvt, xterm or Linux Console. (*note Colored Display::)
+
+   * `-E': colored display of eye spaces
+          Use rxvt, xterm or Linux Console. (*note Colored Display::)
+
+   * `-d', `--debug LEVEL'
+          Produce debugging output. The debug level is given in
+          hexadecimal, using the bits defined in the following table
+          from `engine/gnugo.h'. A list of these may be produced using
+          `--debug-flags'. Here they are in hexadecimal:
+
+                 DEBUG_INFLUENCE             0x0001
+                 DEBUG_EYES                  0x0002
+                 DEBUG_OWL                   0x0004
+                 DEBUG_ESCAPE                0x0008
+                 DEBUG_MATCHER               0x0010
+                 DEBUG_DRAGONS               0x0020
+                 DEBUG_SEMEAI                0x0040
+                 DEBUG_LOADSGF               0x0080
+                 DEBUG_HELPER                0x0100
+                 DEBUG_READING               0x0200
+                 DEBUG_WORMS                 0x0400
+                 DEBUG_MOVE_REASONS          0x0800
+                 DEBUG_OWL_PERFORMANCE       0x1000
+                 DEBUG_LIFE                  0x2000
+                 DEBUG_FILLLIB               0x4000
+                 DEBUG_READING_PERFORMANCE   0x8000
+                 DEBUG_SCORING               0x010000
+                 DEBUG_AFTERMATH             0x020000
+                 DEBUG_ATARI_ATARI           0x040000
+                 DEBUG_READING_CACHE         0x080000
+                 DEBUG_TERRITORY             0x100000
+                 DEBUG_OWL_PERSISTENT_CACHE  0X200000
+
+          These debug flags are additive. If you want to turn on both
+          dragon and worm debugging you can use `-d0x420'.
+
+
+   * `-H', `--hash LEVEL'
+          hash (see `engine/gnugo.h' for bits).
+
+   * `-w', `--worms'
+          Print more information about worm data.
+
+   * `-m', `--moyo LEVEL'
+          moyo debugging, show moyo board. The LEVEL is fully
+          documented elsewhere (*note Influential Display::).
+
+   * `-b', `--benchmark NUMBER'
+          benchmarking mode - can be used with `-l'.
+
+   * `-S', `--statistics'
+          Print statistics (for debugging purposes).
+
+   * `-t', `--trace'
+          Print debugging information. Use twice for more detail.
+
+   * `-r', `--seed SEED'
+          Set random number seed. This can be used to guarantee that
+          GNU Go will make the same decisions on multiple runs through
+          the same game. If `seed' is zero, GNU Go will play a
+          different game each time.
+
+   * `--decide-string LOCATION'
+          Invoke the tactical reading code (*note Tactical Reading:: to
+          decide whether the string at LOCATION can be captured, and if
+          so, whether it can be defended. If used with `-o', this will
+          produce a variation tree in SGF.
+
+   * `--decide-dragon LOCATION'
+          Invoke the owl code (*note The Owl Code::) to decide whether
+          the dragon at LOCATION can be captured, and whether it can be
+          defended. If used with `-o', this will produce a variation
+          tree in SGF.
+
+   * `--score METHOD'
+          Requires `-l'. METHOD can be "end", "last", "aftermath" or a
+          move.  "end" and "aftermath" are appropriate when the game is
+          complete, or nearly so, and both try to supply an accurate
+          final score. The other options may be used to get an estimate
+          during the middle of the game. Any of these options may be
+          combined with `--chinese-rule' if you want to use Chinese
+          (Area) counting.
+             * last
+                    load the sgf file up to the last move, then
+                    estimate territory using the Bouzy 5/21 algorithm
+                    (*note Moyo::).
+
+             * end
+                    finish the game by selfplaying from the end of the
+                    file until two passes, then estimate territory
+                    using the Bouzy 5/21 algorithm (*note Moyo::).
+
+             * aftermath
+                    finish the game by selfplaying from the end of the
+                    file until two passes, then estimate territory
+                    using the most accurate scoring algorithm available.
+                    Slower than `--score last', and while these
+                    algorithms usually agree, if they differ, `--score
+                    aftermath' is most likely to be correct.
+
+             * move, e.g. `--score J17'
+                    load file until move is reached and estimate
+                    territorial balance using the Bouzy 5/21 algorithm.
+                    The `--score end' and `--score aftermath' options
+                    are only useful at or near the end of the game, so
+                    if you want an estimate of the score in the middle,
+                    use this method.
+
+   * `--printsgf OUTPUT FILE'
+          load SGF file, output final position (requires `-l') as
+          another SGF file. Illegal moves are indicated with the
+          private `IL' property.  This property is not used in the FF4
+          SGF specification, so we are free to preempt it. This feature
+          is used in the CGI interface in `interface/html/gg.cgi'.
+
+
+File: gnugo.info,  Node: Overview,  Next: Analyzing,  Prev: User Guide,  Up: Top
+
+GNU Go engine overview
+**********************
+
+   This chapter is an overview of the GNU Go internals. Further
+documentation of how any one module or routine works may be found in
+later chapters or comments in the source files.
+
+* Menu:
+
+* Definitions::                Some words used in this documentation.
+* The Board::                  The Board
+* Move Generation Basics::     How GNU Go generates a move.
+* Examining the Position::     What `examine_position()' does.
+* Sequence of Events::         Outline of `genmove()'.
+* Roadmap::                    Description of the different files.
+* Coding Styles::              Coding conventions.
+* Navigating the Source::      Navigating the Source.
+
+
+File: gnugo.info,  Node: Definitions,  Next: The Board,  Prev: Overview,  Up: Overview
+
+Definitions
+===========
+
+   A "worm" is a maximal set of vertices on the board which are
+connected along the horizontal and vertical lines, and are of the same
+color, which can be `BLACK', `WHITE' or `EMPTY'. The term `EMPTY'
+applied to a worm means that the worm consists of empty (unoccupied)
+vertices. It does *not* mean that that the worm is the empty set. A
+"string" is a nonempty worm. An empty worm is called a "cavity".  If a
+subset of vertices is contained in a worm, there is a unique worm
+containing it; this is its "worm closure". (*note Worms::.)
+
+   A "dragon" is a union of strings of the same color which will be
+treated as a unit. If two strings are in the same dragon, it is the
+computer's working hypothesis that they will live or die together and
+are effectively connected. (*note Dragons::.)
+
+   A "superstring" is a less commonly used unit which is the union of
+several strings but generally smaller than a dragon. The superstring
+code is in `engine/utils.c'. The definition of a superstring is
+slightly different if the code is called from `owl.c' or from
+`reading.c'.
+
+
+File: gnugo.info,  Node: The Board,  Next: Move Generation Basics,  Prev: Definitions,  Up: Overview
+
+   GNU Go represents the board in a one-dimensional array called
+`board'. For some purposes a two dimensional indexing of the board by
+parameters `(i,j)' might be used.
+
+   The `board' array includes out-of-board markers around the board. To
+make the relation to the old two-dimensional board representation
+clear, this figure shows how the 1D indices correspond to the 2D
+indices when MAX_BOARD is 7.
+
+       j  -1   0   1   2   3   4   5   6
+     i +----------------------------------
+     -1|   0   1   2   3   4   5   6   7
+      0|   8   9  10  11  12  13  14  15
+      1|  16  17  18  19  20  21  22  23
+      2|  24  25  26  27  28  29  30  31
+      3|  32  33  34  35  36  37  38  39
+      4|  40  41  42  43  44  45  46  47
+      5|  48  49  50  51  52  53  54  55
+      6|  56  57  58  59  60  61  62  63
+      7|  64  65  66  67  68  69  70  71  72
+
+   To convert between a 1D index `pos' and a 2D index `(i,j)', the
+macros `POS', `I', and `J' are provided, defined as below:
+
+     #define POS(i, j)    ((MAX_BOARD + 2) + (i) * (MAX_BOARD + 1) + (j))
+     #define I(pos)       ((pos) / (MAX_BOARD + 1) - 1)
+     #define J(pos)       ((pos) % (MAX_BOARD + 1) - 1)
+
+   All 1D indices not corresponding to points on the board have the out
+of board marker value `GRAY'. Thus if `board_size' and `MAX_BOARD' both
+are 7, this looks like
+
+       j  -1   0   1   2   3   4   5   6
+     i +----------------------------------
+     -1|   #   #   #   #   #   #   #   #
+      0|   #   .   .   .   .   .   .   .
+      1|   #   .   .   .   .   .   .   .
+      2|   #   .   .   .   .   .   .   .
+      3|   #   .   .   .   .   .   .   .
+      4|   #   .   .   .   .   .   .   .
+      5|   #   .   .   .   .   .   .   .
+      6|   #   .   .   .   .   .   .   .
+      7|   #   #   #   #   #   #   #   #   #
+
+   The indices marked `#' have value `GRAY'.  If `MAX_BOARD' is 7 and
+`board_size' is only 5:
+
+       j  -1   0   1   2   3   4   5   6
+     i +----------------------------------
+     -1|   #   #   #   #   #   #   #   #
+      0|   #   .   .   .   .   .   #   #
+      1|   #   .   .   .   .   .   #   #
+      2|   #   .   .   .   .   .   #   #
+      3|   #   .   .   .   .   .   #   #
+      4|   #   .   .   .   .   .   #   #
+      5|   #   #   #   #   #   #   #   #
+      6|   #   #   #   #   #   #   #   #
+      7|   #   #   #   #   #   #   #   #   #
+
+   Navigation on the board is done by the `SOUTH', `WEST', `NORTH', and
+`EAST' macros,
+
+     #define NS           (MAX_BOARD + 1)
+     #define WE           1
+     #define SOUTH(pos)   ((pos) + NS)
+     #define WEST(pos)    ((pos) - 1)
+     #define NORTH(pos)   ((pos) - NS)
+     #define EAST(pos)    ((pos) + 1)
+
+   There are also shorthand macros `SW', `NW', `NE', `SE', `SS', `WW',
+`NN', `EE' for two step movements.
+
+   Any movement from a point on the board to an adjacent or diagonal
+vertex is guaranteed to produce a valid index into the board array, and
+the color found is GRAY if it is not on the board. To do explicit tests
+for out of board there are two macros
+
+     #define ON_BOARD(pos) (board[pos] != GRAY)
+     #define ON_BOARD1(pos) (((unsigned) (pos) < BOARDSIZE) && board[pos] != GRAY)
+
+   where the first one should be used in the algorithms and the second
+one is useful for assertion tests.
+
+   *Important*: The 2D coordinate `(-1,-1)', which is used for pass and
+sometimes to indicate no point, maps to the 1D coordinate `0', not to
+`-1'. Instead of a plain `0', use one of the macros `NO_MOVE' or
+`PASS_MOVE'.
+
+   A loop over multiple directions is straightforwardly written:
+
+       for (k = 0; k < 4; k++) {
+         int d = delta[k];
+         do_something(pos + d);
+       }
+
+   The following constants are useful for loops over the entire board
+and allocation of arrays with a 1-1 mapping to the board.
+
+     #define BOARDSIZE    ((MAX_BOARD + 2) * (MAX_BOARD + 1) + 1)
+     #define BOARDMIN     (MAX_BOARD + 2)
+     #define BOARDMAX     (MAX_BOARD + 1) * (MAX_BOARD + 1)
+
+   `BOARDSIZE' is the actual size of the 1D board array, `BOARDMIN' is
+the first index corresponding to a point on the board, and `BOARDMAX'
+is one larger than the last index corresponding to a point on the board.
+
+   Often one wants to traverse the board, carrying out some function at
+every vertex. Here are two possible ways of doing this:
+
+       int m, n;
+       for (m = 0; m < board_size; m++)
+         for (n = 0; n < board_size; n++) {
+           do_something(POS(m, n));
+         }
+
+   Or:
+
+       int pos;
+       for (pos = BOARDMIN; pos < BOARDMAX; pos++) {
+         if (ON_BOARD(pos))
+           do_something(pos);
+       }
+
+
+File: gnugo.info,  Node: Move Generation Basics,  Next: Examining the Position,  Prev: The Board,  Up: Overview
+
+Move Generation Basics
+======================
+
+   The engine of GNU Go takes a position and a color to move and
+generates the (supposedly) optimal move.  This is done by the function
+`genmove()' in `engine/genmove.c'.
+
+   The move generation is done in three passes:
+
+  1. Information gathering.
+
+  2. Different modules propose moves.
+
+  3. The values of the moves are weighted together and the best move is
+     selected.
+
+Information gathering
+---------------------
+
+   The information gathering is done by a function `examine_position()',
+which will be discussed in greater detail in the next section.  Such
+information could be life and death of the groups, information about
+moyos, connection of groups and so on. Information gathering is
+performed by `examine_position()', which in turn calls:
+
+   * `make_worms()'
+          Collect information about all connected sets of stones
+          (strings) and cavities.  This information is stored in the
+          `worm[]' array. (*note Worms::)
+
+   * `compute_initial_influence()'
+          Decides which areas of the board are influenced by which
+          player. This function is run a second time later at the end
+          of `make_dragons()', since GNU Go's opinion about the safety
+          of groups may change, and it is important to have the
+          influence function as accurate as possible. *note Influence::
+
+   * `make_dragons()'
+          Collect information about connected strings, which are called
+          dragons.  Important information here is number of eyes, life
+          status, and connectedness between string. (*note Dragons::.)
+
+   A more detailed
+
+Move generation in GNU Go 3.2
+-----------------------------
+
+   Once we have found out all about the position it is time to generate
+the best move. Moves are proposed by a number of different modules
+called "move generators". The move generators themselves do not set the
+values of the moves, but enumerate justifications for them, called
+"move reasons". The valuation of the moves comes last, after all moves
+and their reasons have been generated.
+
+   The move generators in version 3.2 are:
+
+   * `fuseki()'
+          Generate a move in the early fuseki.
+
+   * `semeai()'
+          Find out if two dead groups of opposite colors are next to
+          each other and, if so, try to kill the other group. This
+          module will eventually be rewritten along the lines of the
+          owl code.
+
+   * `shapes()'
+          Find patterns from `patterns/patterns.db' in the current
+          position.  Each pattern is matched in each of the 8 possible
+          orientations obtainable by rotation and reflection. If the
+          pattern matches, a so called "constraint" may be tested which
+          makes use of reading to determine if the pattern should be
+          used in the current situation.  Such constraints can make
+          demands on number of liberties of strings, life and death
+          status, and reading out ladders, etc. The patterns may call
+          helper functions, which may be hand coded (in
+          `patterns/helpers.c') or autogenerated.
+
+          The patterns can be of a number of different classes with
+          different goals.  There are e.g. patterns which try to attack
+          or defend groups, patterns which try to connect or cut
+          groups, and patterns which simply try to make good shape. In
+          addition to the large pattern database called by `shapes()',
+          pattern matching is used by other modules for different tasks
+          throughout the program. *Note Patterns::, for a complete
+          documentation of patterns.
+
+   * `atari_atari()'
+          See if there are any combination threats and either propose
+          them or defend against them.
+
+   * `owl_reasons()'
+          The Owl Code (*note The Owl Code::) which has been run during
+          `examine_position'), before `owl_reasons()' executes, has
+          decided whether different groups can be attacked. The module
+          `review_owl_reasons' reviews the statuses of every dragon and
+          assigns move reasons for attack and defense. Unlike the other
+          move generation modules, this one is called from
+          `examine_position()'.
+
+   * `endgame_shapes()'
+          If no move is found with a value greater than 6.0, this
+          module matches a set of extra patterns which are designed for
+          the endgame.  The endgame patterns can be found in
+          `patterns/endgame.db'.
+
+   * `revise_semeai()'
+          If no move is found, this module changes the status of
+          opponent groups involved in a semeai from `DEAD' to
+          `UNKNOWN'.  After this, genmove runs `shapes' and
+          `endgame_shapes' again to see if a new move turns up.
+
+   * `fill_liberty()'
+          Fill a common liberty. This is only used at the end of the
+          game. If necessary a backfilling or backcapturing move is
+          generated.
+
+Selecting the Move
+------------------
+
+   After the move generation modules have run, the best ten moves are
+selected by the function `review_move_reasons'. This function also does
+some analysis to try to turn up other moves which may have been missed.
+The modules `revise_semeai()' and `fill_liberty()' are only run if no
+good move has been discovered by the other modules.
+
+
+File: gnugo.info,  Node: Examining the Position,  Next: Sequence of Events,  Prev: Move Generation Basics,  Up: Overview
+
+Examining the Position
+======================
+
+   In this section we summarize the sequence of events when
+`examine_position()' is run from `genmove()'. This is for reference
+only. Don't try to memorize it.
+
+purge persistent reading cache (*note Persistent Cache::)
+`make_worms()' (*note Worms::):
+  `build_worms()' finds and identifies the worms
+  compute effective size of each worm
+  `unconditional_life()'
+  `find_worm_attacks_and_defenses()':
+    for each attackable worm:
+      set `worm.attack'
+      `add_attack_move()'
+    `find_attack_patterns()' to find a few more attacks
+    for each defensible worm
+      set `worm.defend'
+      `add_defense_move'
+      if point of attack is not adjacent to worm see if it defends
+    `find_defense_patterns()' to find a few more defenses
+    for each attackable worm try each liberty
+      if it attacks `add_attack_move'
+      if it defends `add_defense_move'
+  find kos.
+  for each worm
+    find higher order liberties
+  find cutting points (worm.cutstone)
+  for each worm compute the genus (*note Worms::)
+  `small_semeai()'
+  try to improve values of worm.attack and worm.defend
+  try to repair situations where adjacent worms can be
+    both attacked and defended
+  find worm lunches
+  find worm threats
+`compute_initial_influence()' (*note Influence::)
+  `compute_influence()'
+    `find_influence_patterns()'
+  at each intersection `accumulate_influence()'
+  `segment_influence()'
+`make_dragons()' (*note Dragons::)
+  initialize dragon data
+  find the inessential worms
+  `make_domains()'
+    initialize eye data
+    `compute_primary_domains()'
+    fill out arrays black_eye and white_eye
+      describing eyeshapes
+    find_cuts()
+    for every eyespace
+      `originate_eye()'
+    count_neighbors()
+  `find_connections()'
+  amalgamate dragons sharing an eyespace
+  `initialize_supplementary_dragon_data()'
+  find adjacent worms which can be captured (dragon lunches)
+  find topological half eyes and false eyes
+  `modify_eye_spaces()'
+  for each eye space
+    `compute_eyes()'
+    store the results in black_eye, white_eye arrays
+  compute the genus of each dragon
+  for each dragon
+    `compute_escape()'
+  `resegment_initial_influence()'
+  for each dragon
+    `influence_get_moyo_size()'
+  for each dragon
+     `compute_dragon_status()'
+  `find_neighbor_dragons()'
+  `purge_persistent_owl_cache()'
+  for each dragon which seems surrounded
+     try `owl_attack()' and `owl_defend()'
+     if appropriate find owl threats
+  for each dragon
+     set dragon.matcher_status
+  for each dragon
+     set dragon2.safety
+  `semeai()'
+  revise opinion of which worms are inessential
+  count non-dead dragons of each color
+`owl_reasons()' (*note The Owl Code::)
+`compute_initial_influence()' again (*note Influence::)
+
+
+File: gnugo.info,  Node: Sequence of Events,  Next: Roadmap,  Prev: Examining the Position,  Up: Overview
+
+Sequence of Events
+==================
+
+   In this section we summarize the sequence of events during the move
+generation and selection phases of `genmove()', which take place after
+the information gathering phase has been completed.
+
+`fuseki()'
+`shapes()'
+`review_move_reasons()'
+  `find_more_attack_and_defense_moves()'
+  `remove_opponent_attack_and_defense_moves()'
+  `do_remove_false_attack_and_defense_moves()'
+  `examine_move_safety()'
+  `induce_secondary_move_reasons()'
+  `value_moves()'
+  find the ten best moves
+if the value of the best move is < 6.0
+  `endgame_shapes()'
+if no move found yet
+  `revise_semeai()'
+  `shapes()'
+  `endgame_shapes()'
+if still no move found
+  `fill_liberty()'
+if still no move found
+    pass
+
+
+File: gnugo.info,  Node: Roadmap,  Next: Coding Styles,  Prev: Sequence of Events,  Up: Overview
+
+Roadmap
+=======
+
+   The GNU Go engine is contained in two directories, `engine/' and
+`patterns/'. Code related to the user interface, reading and writing of
+smart go format files, and testing are found in the directories
+`interface/', `sgf/', and `regression/'. Code borrowed from other GNU
+programs is contained in `utils/'. That directory also includes some
+code developed within GNU Go which is not go specific. Documentation is
+in `doc/'.
+
+   In this document we will describe some of the individual files
+comprising the engine code in `engine/' and `patterns/'. In `interface/'
+we mention two files:
+
+   * `gmp.c'
+          This is the Go Modem Protocol interface (courtesy of William
+          Shubert and others). This takes care of all the details of
+          exchanging setup and moves with Cgoban, or any other driving
+          program recognizing the Go Modem Protocol.
+
+   * `main.c'
+          This contains `main()'. The `gnugo' target is thus built in
+          the `interface/' directory.
+
+Files in `engine/'
+------------------
+
+   In `engine/' there are the following files:
+
+   * `aftermath.c'
+          Contains algorithms which may be called at the end of the
+          game to generate moves that will generate moves to settle the
+          position, if necessary playing out a position to determine
+          exactly the status of every group on the board, which GNU Go
+          can get wrong, particularly if there is a seki. This module is
+          the basis for the most accurate scoring algorithm available
+          in GNU Go.
+
+   * `board.c'
+          This file contains code for the maintenance of the board.
+          For example it contains the important function `trymove()'
+          which tries a move on the board, and `popgo()' which removes
+          it by popping the move stack. At the same time vital
+          information such as the number of liberties for each string
+          and their location is updated incrementally.
+
+   * `clock.c'
+          Clock code, including code allowing GNU Go to automatically
+          adjust its level in order to avoid losing on time in
+          tournaments.
+
+   * `dragon.c'
+          This contains `make_dragons()'. This function is executed
+          before the move-generating modules `shapes()' `semeai()' and
+          the other move generators but after `make_worms'. It tries to
+          connect worms into dragons and collect important information
+          about them, such as how many liberties each has, whether (in
+          GNU Go's opinion) the dragon can be captured, if it lives,
+          etc.
+
+   * `fuseki.c'
+          Generates fuseki (opening) moves from a database.
+
+   * `filllib.c'
+          Code to force filling of dame (backfilling if necessary) at
+          the end of the game.
+
+   * `genmove.c'
+          This file contains `genmove()' and its supporting routines,
+          particularly `examine_position()'.
+
+   * `globals.c'
+          This contains the principal global variables used by GNU Go.
+
+   * `gnugo.h'
+          This file contains declarations forming the public interface
+          to the engine.
+
+   * `hash.c' and `cache.c'
+          Hashing code implementing Zobrist hashing. (*note Hashing::)
+          The code in `hash.c' provides a way to hash board positions
+          into compact descriptions which can be efficiently compared.
+          The code in `cache.c' implements a kind of database for
+          storing reading results, so they can be quickly retrieved.
+          The caching code uses the board hashes as keys to the
+          database.  They are split since these functionalities are
+          sufficiently demarked that either file could be reimplemented
+          without affecting the other one.  Note also that `matchpat()'
+          uses the hashing code without also using the caching code.
+
+   * `hash.h' and `cache.h'
+          Header files for `hash.c' and `cache.c'.
+
+   * `influence.c' and `influence.h'.
+          This code determines which regions of the board are under the
+          influence of either player.  (*note Influence::)
+
+   * `liberty.h'
+          Header file for the engine. The name "liberty" connotes
+          freedom (*note Copying::).
+
+   * `life.c'
+          The code in this file contains an alternative approach to
+          life and death based on reading instead of the static approach
+          in `optics.c'. This code is experimental. It is reasonably
+          accurate but too slow. It is activated when gnugo is invoked
+          with the `--life' option.
+
+   * `matchpat.c'
+          This file contains the pattern matcher `matchpat()', which
+          looks for patterns at a particular board location. The actual
+          patterns are in the `patterns/' directory. The function
+          `matchpat()' is called by every module which does pattern
+          matching, notably `shapes'.
+
+   * `move_reasons.c'
+          This file contains the code which assigns values to every move
+          after all the move reasons are gen
+
+   * `optics.c'
+          This file contains the code to recognize eye shapes,
+          documented in *Note Eyes::.
+
+   * `owl.c'
+          This file does life and death reading. The paradigm is that
+          moves are played by both players trying to expand and shrink
+          the eyespace until a static configuration is reached where it
+          can be analyzed by the code in `optics.c' or `life.c'.
+
+   * `printutils.c'
+          Print utilities
+
+   * `reading.c'
+          This file contains code to determine whether any given string
+          can be attacked or defended. *Note Tactical Reading::, for
+          details.
+
+   * `score.c'
+          Implements the Bouzy algorithms (*note Moyo::) and contains
+          code for scoring the game.
+
+   * `semeai.c'
+          This file contains `semeai()', the module which tries to win
+          capturing races. This module does not work particularly well
+          and will eventually be replaced.
+
+   * `shapes.c'
+          This file contains `shapes()', the module called by
+          `genmove()' which tries to find moves which match a pattern
+          (*note Patterns::).
+
+   * `showbord.c'
+          This file contains `showboard()', which draws an ASCII
+          representation of the board, depicting dragons (stones with
+          same letter) and status (color). This was the primary
+          interface in GNU Go 1.2, but is now a debugging aid.
+
+   * `worm.c'
+          This file contains `make_worms()', code which is run at the
+          beginning of each move cycle, before the code in `dragon.c',
+          to determine the attributes of every string. These attributes
+          are things like liberties, wether the string can be captured
+          (and how), etc
+
+   * `utils.c'
+          An assortment of utilities, described in greater detail below.
+
+Files in `patterns/'
+--------------------
+
+   The directory `patterns/' contains files related to pattern matching.
+Currently there are several types of patterns. A partial list:
+
+   * move generation patterns in `patterns.db' and `patterns2.db'
+
+   * move generation patterns in files `hoshi.db' etc. which are
+     automatically build from the files `hoshi.sgf' etc. These comprise
+     our small Joseki library.
+
+   * patterns in `owl_attackpats.db', `owl_defendpats.db' and
+     `owl_vital_apats.db'. These generate moves for the owl code (*note
+     The Owl Code::).
+
+   * Connection patterns in `conn.db' (*note Connections Database::)
+
+   * Influence patterns in `influence.db' and `barriers.db' (*note
+     Influence::)
+
+   * eye patterns in `eyes.db' (*note Eyes::).
+
+   The following list contains, in addition to distributed source files
+some intermediate automatically generated files such as `patterns.c'.
+These are C source files produced by "compiling" various pattern
+databases, or in some cases (such as `hoshi.db') themselves
+automatically generated pattern databases produced by "compiling"
+joseki files in Smart Go Format.
+
+   * `conn.db'
+          Database of connection patterns.
+
+   * `conn.c'
+          Automatically generated file, containing connection patterns
+          in form of struct arrays, compiled by `mkpat' from `conn.db'.
+
+   * `eyes.c'
+          Automatically generated file, containing eyeshape patterns in
+          form of struct arrays, compiled by `mkpat' from `eyes.db'.
+
+   * `eyes.h'
+          Header file for `eyes.c'.
+
+   * `eyes.db'
+          Database of eyeshape patterns. *Note Eyes::, for details.
+
+   * `helpers.c'
+          These are helper functions to assist in evaluating moves by
+          matchpat.
+
+   * `hoshi.sgf'
+          Smart Go Format file containing 4-4 point openings
+
+   * `hoshi.db'
+          Automatically generated database of 4-4 point opening
+          patterns, make by compiling `hoshi.sgf'
+
+   * `joseki.c'
+          Joseki compiler, which takes a joseki file in Smart Go
+          Format, and produces a pattern database.
+
+   * `komoku.sgf'
+          Smart Go Format file containing 3-4 point openings
+
+   * `komoku.db'
+          Automatically generated database of 3-4 point opening
+          patterns, make by compiling `komoku.sgf'
+
+   * `mkeyes.c'
+          Pattern compiler for the eyeshape databases. This program
+          takes `eyes.db' as input and produces `eyes.c' as output.
+
+   * `mkpat.c'
+          Pattern compiler for the move generation and connection
+          databases. Takes the file `patterns.db' together with the
+          autogenerated Joseki pattern files `hoshi.db', `komoku.db',
+          `sansan.db', `mokuhadzushi.db', `takamoku.db' and produces
+          `patterns.c', or takes `conn.db' and produces `conn.c'.
+
+   * `mokuhazushi.sgf'
+          Smart Go Format file containing 5-3 point openings
+
+   * `mokuhazushi.db'
+          Pattern database compiled from mokuhadzushi.sgf
+
+   * `sansan.sgf'
+          Smart Go Format file containing 3-3 point openings
+
+   * `sansan.db'
+          Pattern database compiled from `sansan.sgf'
+
+   * `takamoku.sgf'
+          Smart Go Format file containing 5-4 point openings
+
+   * `takamoku.db'
+          Pattern database compiled from takamoku.sgf.
+
+   * `patterns.c'
+          Pattern data, compiled from patterns.db by mkpat.
+
+   * `patterns.h'
+          Header file relating to the pattern databases.
+
+   * `patterns.db' and `patterns2.db'
+          These contain pattern databases in human readable form.
+
+
+
+File: gnugo.info,  Node: Coding Styles,  Next: Navigating the Source,  Prev: Roadmap,  Up: Overview
+
+Coding styles and conventions
+=============================
+
+Coding Conventions
+------------------
+
+   Please follow the coding conventions at:
+<http://www.gnu.org/prep/standards_toc.html>
+
+   Please preface every function with a brief description of its usage.
+
+   Please help to keep this Texinfo documentation up-to-date.
+
+Tracing
+-------
+
+   A function `gprintf()' is provided. It is a cut-down `printf',
+supporting only `%c', `%d', `%s', and without field widths, etc. It
+does, however, add some useful facilities:
+
+   * `%m'
+          Takes two parameters, and displays a formatted board
+          co-ordinate.
+
+   * indentation
+          Trace messages are automatically indented to reflect the
+          current stack depth, so it is clear during read-ahead when it
+          puts a move down or takes one back.
+
+   * "outdent"
+          format string suppresses the indentation.
+
+   A variant `mprintf' sends output to stderr. Normally `gprintf()' is
+wrapped in one of the following:
+
+   `TRACE(fmt, ...)':
+     Print the message if the 'verbose' variable > 0.  (verbose is set
+     by `-t' on the command line)
+
+   `DEBUG(flags, fmt, ...)':
+     While `TRACE' is intended to afford an overview of what GNU Go is
+     considering, `DEBUG' allows occasional in depth study of a module,
+     usually needed when something goes wrong. `flags' is one of the
+     `DEBUG_*' symbols in `engine/gnugo.h'.  The `DEBUG' macro tests to
+     see if that bit is set in the `debug' variable, and prints the
+     message if it is.  The debug variable is set using the `-d'
+     command-line option.
+
+   The variable `verbose' controls the tracing. It can equal 0 (no
+trace), 1, 2, 3 or 4 for increasing levels of tracing. You can set the
+trace level at the command line by `-t' for `verbose=1', `-t -t' for
+`verbose=2', etc. But in practice if you want more verbose tracing than
+level 1 it is better to use gdb to reach the point where you want the
+tracing; you will often find that the variable `verbose' has been
+temporarily set to zero and you can use the gdb command `set var
+verbose=1' to turn the tracing back on.
+
+Assertions
+----------
+
+   Related to tracing are assertions. Developers are strongly encouraged
+to pepper their code with assertions to ensure that data structures are
+as they expect. For example, the helper functions make assertions about
+the contents of the board in the vicinity of the move they are
+evaluating.
+
+   `ASSERT()' is a wrapper around the standard C `assert()' function.
+In addition to the test, it takes an extra pair of parameters which are
+the co-ordinates of a "relevant" board position. If an assertion fails,
+the board position is included in the trace output, and `showboard()'
+and `popgo()' are called to unwind and display the stack.
+
+FIXME
+-----
+
+   We have adopted the convention of putting the word FIXME in comments
+to denote known bugs, etc.
+
+
+File: gnugo.info,  Node: Navigating the Source,  Prev: Coding Styles,  Up: Overview
+
+Navigating the Source
+=====================
+
+   If you are using Emacs, you may find it fast and convenient to use
+Emacs' built-in facility for navigating the source. Switch to the root
+directory `gnugo-3.2.x/' and execute the command:
+
+     find . -print|grep "\.[ch]$" | xargs etags
+
+   This will build a file called `gnugo-3.2.x/TAGS'. Now to find any
+GNU Go function, type `M-.' and enter the command which you wish to
+find, or just `RET' if the cursor is at the name of the function sought.
+
+   The first time you do this you will be prompted for the location of
+the TAGS table.  Enter the path to `gnugo-3.2.x/TAGS', and henceforth
+you will be able to find any function with a minimum of keystrokes.
+
+
+File: gnugo.info,  Node: Analyzing,  Next: API,  Prev: Overview,  Up: Top
+
+Analyzing GNU Go's moves
+************************
+
+   In this chapter we will discuss methods of finding out how GNU Go
+understands a given position. These methods will be of interest to
+anyone working on the program, or simply curious about its workings.
+
+   In practice, most tuning of GNU Go is done in conjunction with
+maintaining the `regression/' directory (*note Regression::).
+
+   We assume that you have a game GNU Go played saved as an sgf file,
+and you want to know why it made a certain move.
+
+* Menu:
+
+* Traces::			Analyzing traces in GNU Go 3.2
+* Output File::			The Output File
+* Decide string::		Checking the reading code
+* Decide dragon::		Checking the owl code
+* GTP and GDB techniques::      GTP and GDB techniques
+* Debugboard::                  Debugboard
+* Scoring::                     Finding out the winner of the game
+* Colored Display::             Colored Display
+
+
+File: gnugo.info,  Node: Traces,  Next: Output File,  Prev: Analyzing,  Up: Analyzing
+
+Interpreting Traces
+===================
+
+   A quick way to find out roughly the reason for a move is to run
+
+     gnugo -l FILENAME -t -L MOVE NUMBER
+
+   (You may also want to add `--quiet' to suppress the copyright
+message.) In GNU Go 3.2, the moves together with their reasons are
+listed, followed by a numerical analysis of the values given to each
+move.
+
+   If you are tuning (*note Tuning::) you may want to add the `-a'
+option. This causes GNU Go to report all patterns matched, even ones
+that cannot affect the outcome of the move. The reasons for doing this
+is that you may want to modify a pattern already matched instead of
+introducing a new one.
+
+   If you use the `-w' option, GNU Go will report the statuses of worms
+and dragons around the board. This type of information is available by
+different methods, however (*note Debugboard::, *note Colored
+Display::).
+
+
+File: gnugo.info,  Node: Output File,  Next: Decide string,  Prev: Traces,  Up: Analyzing
+
+The Output File
+===============
+
+   If GNU Go is invoked with the option `-o filename' it will produce
+an output file. This option can be added at the command line in the Go
+Modem Protocol Setup Window of CGoban. The output file will show the
+locations of the moves considered and their weights. It is worth noting
+that by enlarging the CGoban window to its fullest size it can display
+3 digit numbers. Dragons with status `DEAD' are labelled with an `X',
+and dragons with status `CRITICAL' are labelled with a `!'.
+
+   If you have a game file which is not commented this way, or which
+was produced by a non-current version of GNU Go you may ask GNU Go to
+produce a commented version by running:
+
+     gnugo --quiet -l <old file> --replay <color> -o <new file>
+
+Here <color> can be 'black,' 'white' or 'both'. The replay option will
+also help you to find out if your current version of GNU Go would play
+differently than the program that created the file.
+

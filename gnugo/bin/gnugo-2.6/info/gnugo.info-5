@@ -1,0 +1,51 @@
+This is gnugo.info, produced by makeinfo version 4.0 from gnugo.texi.
+
+
+File: gnugo.info,  Node: Functions Index,  Prev: Concept Index,  Up: Top
+
+Functions Index
+***************
+
+* Menu:
+
+* attack():                              Reading Basics.
+* attack2():                             Reading Basics.
+* attack3():                             Reading Basics.
+* attack4():                             Reading Basics.
+* break_chain():                         Reading Basics.
+* break_chain2():                        Reading Basics.
+* chainlinks():                          Reading Basics.
+* defend1():                             Reading Basics.
+* defend2(int m, int n, int *i, int *j): Reading Basics.
+* defend3(int m, int n, int *i, int *j): Reading Basics.
+* dump_stack(void):                      Utility Functions.
+* find_cap2():                           Reading Basics.
+* find_defense() ::                      Reading Basics.
+* hashnode_new_result():                 Hash Organization.
+* hashtable_enter_position():            Hash Organization.
+* hashtable_search():                    Hash Organization.
+* int confirm_safety(int i, int j, int color, int value): Utility Functions.
+* int connection_value(int ai, int aj, int bi, int bj, int ti, int tj): Utility Functions.
+* int count(int i, int j, int color, char mx[MAX_BOARD][MAX_BOARD], int maxlib, char mark): Utility Functions.
+* int cut_possible(int i, int j, int color): Utility Functions.
+* int does_attack(int ti, int tj, int ai, int aj): Utility Functions.
+* int does_defend(int ti, int tj, int ai, int aj): Utility Functions.
+* int find_lunch(int m, int n, int *wi, int *wj, int *ai, int *aj): Utility Functions.
+* int is_ko(int i, int j, int color):    Utility Functions.
+* int legal(int i, int j, int color):    Utility Functions.
+* int popgo():                           Utility Functions.
+* int singleton(int i, int j):           Utility Functions.
+* int TRY_MOVE():                        Utility Functions.
+* int trymove(int i, int j, int color, const char *message, int k, int l): Utility Functions.
+* pushgo():                              Utility Functions.
+* safe_move():                           Reading Basics.
+* small_semeai():                        Reading Basics.
+* snapback():                            Reading Basics.
+* tryko(int i, int j, int color, const char *message): Utility Functions.
+* vgprintf(FILE* outputfile, const char *fmt, va_list ap): Utility Functions.
+* void change_attack(int ai, int aj, int ti, int tj): Utility Functions.
+* void change_defense(int ai, int aj, int ti, int tj): Utility Functions.
+* void change_dragon_status(int x, int y, int status): Utility Functions.
+* void TRACE(const char *fmt, ...):      Utility Functions.
+
+

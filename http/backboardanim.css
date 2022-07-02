@@ -1,0 +1,99 @@
+/*
+ * 背景CSSアニメーション参考
+ *   http://niwakasoft.jp/column/css3_animation/ 
+ */
+body {
+  font-family: Verdana, "游ゴシック", YuGothic, "ヒラギノ角ゴ ProN W3", "Hiragino Kaku Gothic ProN", "メイリオ", Meiryo, sans-serif; 
+  color:#0044AA;
+  
+  background-color : #FFFFFF;
+/*
+  background-image : url('blackback.png'), url('whiteback.png');
+  -webkit-animation: back 20s linear infinite;
+  -moz-animation   : back 20s linear infinite;
+  -ms-animation    : back 20s linear infinite;
+  animation        : back 20s linear infinite;
+*/
+}
+@keyframes back {
+  0% {background-position: 10px 10px, 0 0;}
+  100% {background-position: 70px -110px, -120px -60px;}
+}
+@-webkit-keyframes back {
+  0% {background-position: 10px 10px, 0 0;}
+  100% {background-position: 70px -110px, -120px -60px;}
+}
+@-moz-keyframes back {
+  0% {background-position: 10px 10px, 0 0;}
+  100% {background-position: 70px -110px, -120px -60px;}
+}
+@-ms-keyframes back {
+  0% {background-position: 10px 10px, 0 0;}
+  100% {background-position: 70px -110px, -120px -60px;}
+}
+
+/* h1 */
+h1 {
+  font-size:x-large;
+  font-weight:normal;
+}
+
+/* リンクボタン：http://weboook.blog22.fc2.com/blog-entry-311.html */
+a.button-blue {
+  width:90%;
+  color:#ffffff;
+  font-size:20px;
+  font-weight:bold;
+  text-align:center;
+  display:block;
+  text-decoration:none;
+  padding:10px 0 5px 0;
+  border-radius:5px;
+  
+  background:#337fcc;
+  text-shadow:0 -1px 0px #225588,0 -2px 0px #225588;
+  border:1px solid #225588;
+}
+a.button-pink {
+  width:90%;
+  color:#ffffff;
+  font-size:20px;
+  font-weight:bold;
+  text-align:center;
+  display:block;
+  text-decoration:none;
+  padding:10px 0 5px 0;
+  border-radius:5px;
+  
+  background:#ff8888;
+  text-shadow:0 -1px 0px #aa4444,0 -2px 0px #aa4444;
+  border:1px solid #aa4444;
+}
+a.button-blue-thin {
+  color:#ffaaaa;
+  font-weight:bold;
+  text-align:center;
+  display:block;
+  text-decoration:none;
+  padding: 0 1em;
+  border-radius:3px;
+  
+  background:#337fcc;
+}
+.button-gray {
+  width:90%;
+  color:#ffffff;
+  font-size:20px;
+  font-weight:bold;
+  text-align:center;
+  display:block;
+  text-decoration:none;
+  padding:10px 0 5px 0;
+  border-radius:5px;
+  
+  background:#888888;
+  text-shadow:0 -1px 0px #555555,0 -2px 0px #555555;
+  border:1px solid #555555;
+}
+
+

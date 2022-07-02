@@ -1,0 +1,98 @@
+This is gnugo.info, produced by makeinfo version 4.0 from gnugo.texi.
+
+
+Indirect:
+gnugo.info-1: 71
+gnugo.info-2: 49821
+gnugo.info-3: 99299
+gnugo.info-4: 148462
+gnugo.info-5: 198148
+
+Tag Table:
+(Indirect)
+Node: Top71
+Node: Introduction1994
+Node: Copyright2545
+Node: Authors3455
+Node: Thanks3834
+Node: News4408
+Node: TODO5627
+Node: Copying10336
+Node: User Guide29532
+Node: Installation30075
+Node: Documentation32190
+Node: CGoban33717
+Node: Ascii34844
+Node: Emacs35411
+Node: Jago37013
+Node: GMP37520
+Node: SGF38158
+Node: Invoking GNU Go38477
+Node: Overview48168
+Node: Definitions48847
+Node: Move Generation49821
+Node: Roadmap54223
+Node: Data Structures64366
+Node: Coding Styles66141
+Node: Analyzing68732
+Node: Traces69158
+Node: Output File69552
+Node: Decidestring70256
+Node: Scoring71327
+Node: Colored Display72702
+Node: Dragon74597
+Node: Worms77395
+Node: Amalgamation84826
+Node: Connection89059
+Node: Half Eyes90772
+Node: Distance and Strategic Distance92275
+Node: Dragons93791
+Node: Dragons in Color97687
+Node: Eyes98738
+Node: Local Games99299
+Node: Eye Space100368
+Node: Eye Space as Local Game102455
+Node: Eye Example105272
+Node: Graphs106033
+Node: Eye Shape107756
+Node: Eye Topology108734
+Node: Moyo110747
+Node: Bouzy111449
+Node: Implementation115079
+Node: 5/21 Territory116823
+Node: 5/10 Moyo120872
+Node: 4/0 Area124683
+Node: Weak groups130745
+Node: Big move131321
+Node: Caching132147
+Node: Patterns133068
+Node: Patterns Overview134108
+Node: Pattern Attributes135879
+Node: Defensive Patterns141791
+Node: Offensive Patterns142505
+Node: Helper Functions143339
+Node: Wind Assistance146190
+Node: Moyo Assistance147912
+Node: Tuning148462
+Node: Autohelpers153352
+Node: Autohelper Functions155700
+Node: Pattern Matcher159150
+Node: Symmetry160529
+Node: Matcher Details161897
+Node: Grid Optimization164303
+Node: Joseki Compiler166055
+Node: Advanced Features166729
+Node: Connection Patterns167320
+Node: Reading167760
+Node: Reading Basics168172
+Node: Hashing177708
+Node: Hash Calculation179112
+Node: Hash Organization180643
+Node: Debugging183220
+Node: Utility Functions187553
+Node: End Game193202
+Node: Regression196179
+Node: Concept Index196986
+Node: Functions Index198148
+
+End Tag Table
